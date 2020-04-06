@@ -1,9 +1,10 @@
-#ifndef __IO_H__
+ #ifndef __IO_H__
 #define __IO_H__
 
 #include "type.h"
 
-struct bcastParam{
+struct bcastParam
+{
   int ligne_per_proc;
   int col_per_proc;
   float max;
