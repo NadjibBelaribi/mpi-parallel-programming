@@ -64,7 +64,7 @@ int main(int argc, char **argv)
   MPI_Barrier(MPI_COMM_WORLD) ;
 
   /***Tout le monde doit effectuer le MPI_Bcast sinon ils reçoivent pas****/
-  
+
   MPI_Bcast(&recvParam, 1, Mpi_bcastParam, 0, MPI_COMM_WORLD);
 
   printf("Je suis %d: %d, %d, %f\n", rank,recvParam.ligne_per_proc,recvParam.col_per_proc,recvParam.max);
@@ -76,9 +76,12 @@ int main(int argc, char **argv)
     m->terrain = malloc(sizeof(float)*elem_per_proc) ;
     
   }
-  m->nrows = ligne_per_proc;
+  /*m->nrows = ligne_per_proc;
   m->ncols = col_per_proc;
-  m->max = max;
+  m->max = max;*/
+  m->nrows = recvParam.ligne_per_proc;
+  m->ncols = recvParam.col_per_proc;
+  m->max = recvParam.max;
   
   printf("proc N %d / %d avec rows ; %d cols ; %d  max ; %f \n",rank,size,m->nrows ,m->ncols,max)  ;
 
