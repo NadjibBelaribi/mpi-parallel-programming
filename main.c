@@ -31,15 +31,16 @@ int main(int argc, char **argv)
 
   /* tout ce qui suit permet de créer le type MPI qui contient toutes les infos*/
 
-  MPI_Datatype type[3] = {MPI_INT, MPI_INT, MPI_FLOAT};
-  int blocklen[3] = {1, 1, 1};
-  MPI_Aint disp[3];
+  MPI_Datatype type[3] = {MPI_INT, MPI_INT, MPI_FLOAT,MPI_FLOAT};
+  int blocklen[4] = {1, 1, 1,1};
+  MPI_Aint disp[4];
 
   disp[0] = (char *)&recvParam.ligne_per_proc - (char *)&recvParam;
   disp[1] = (char *)&recvParam.col_per_proc - (char *)&recvParam;
   disp[2] = (char *)&recvParam.max - (char *)&recvParam;
+  disp[2] = (char *)&recvParam.no_data - (char *)&recvParam;
 
-  MPI_Type_create_struct(3, blocklen, disp, type, &Mpi_bcastParam);
+  MPI_Type_create_struct(4, blocklen, disp, type, &Mpi_bcastParam);
   MPI_Type_commit(&Mpi_bcastParam);
 
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
