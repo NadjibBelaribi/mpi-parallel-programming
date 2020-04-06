@@ -7,10 +7,12 @@
 #include "type.h"
 #include "io.h"
 #include <string.h>
- #include<float.h>
+#include<float.h>
 #include <mpi.h>
 
 extern int rank, size;
+struct bcastParam recvParam;
+
 
 mnt *mnt_read(char *fname)
 {
@@ -50,13 +52,21 @@ mnt *mnt_read(char *fname)
   col_per_proc = m->ncols ; 
   elem_per_proc = ligne_per_proc * m->ncols;
 
-  MPI_Bcast(&elem_per_proc, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+  //Ici j'ai juste mit les val calculé dans ma structure//
+  recvParam.ligne_per_proc=ligne_per_proc;
+  recvParam.col_per_proc=col_per_proc;
+  recvParam.max=max;
+
+  /*MPI_Bcast(&elem_per_proc, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
   MPI_Bcast(&ligne_per_proc, 1, MPI_INT, 0, MPI_COMM_WORLD);
   
   MPI_Bcast(&col_per_proc, 1, MPI_INT, 0, MPI_COMM_WORLD);
   
-  MPI_Bcast(&max, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&max, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);*/
+
+  //MPI_Bcast(&recvParam, 1, Mpi_bcastParam, 0, MPI_COMM_WORLD);
 
  /* MPI_Scatter(&m->terrain[0], elem_per_proc, MPI_FLOAT,
               &m->terrain[0], elem_per_proc, MPI_FLOAT, 0, MPI_COMM_WORLD);*/
