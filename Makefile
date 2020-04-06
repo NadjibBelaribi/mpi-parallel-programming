@@ -1,4 +1,4 @@
-CC?=gcc
+CC=mpicc
 CFLAGS=-Wall -O3 -march=native -g
 LDFLAGS=$(CFLAGS)
 

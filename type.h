@@ -7,7 +7,7 @@ typedef struct mnt_t
   int ncols, nrows;                   // size
   float xllcorner, yllcorner, cellsize; // not used
   float no_data;                      // mnt value unknown
-
+  float max ;
   float *terrain;                     // linear array (size: ncols*nrows)
 }
 mnt;

@@ -32,7 +32,7 @@ float *init_W(const mnt *restrict m)
   CHECK((W = malloc(ncols * nrows * sizeof(float))) != NULL);
 
   // initialisation W
-  const float max = max_terrain(m);
+  const float max = m->max;
   for(int i = 0 ; i < nrows ; i++)
   {
     for(int j = 0 ; j < ncols ; j++)

@@ -1,16 +1,23 @@
 // fonctions d'entrée/sortie
 
 #include <stdio.h>
-
+#include <sys/types.h>
+#include <unistd.h>
 #include "check.h"
 #include "type.h"
 #include "io.h"
+#include <string.h>
+ #include<float.h>
+#include <mpi.h>
+
+int ligne_per_proc, col_per_proc;
+float max ;
+extern int rank, size;
 
 mnt *mnt_read(char *fname)
 {
   mnt *m;
   FILE *f;
-
   CHECK((m = malloc(sizeof(*m))) != NULL);
   CHECK((f = fopen(fname, "r")) != NULL);
 
@@ -23,47 +30,80 @@ mnt *mnt_read(char *fname)
 
   CHECK((m->terrain = malloc(m->ncols * m->nrows * sizeof(float))) != NULL);
 
-  for(int i = 0 ; i < m->ncols * m->nrows ; i++)
+  max = FLT_MIN_10_EXP - 37;
+
+  for (int i = 0; i < m->ncols * m->nrows; i++)
   {
     CHECK(fscanf(f, "%f", &m->terrain[i]) == 1);
+    if (m->terrain[i] > max)
+      max = m->terrain[i];
   }
-
   CHECK(fclose(f) == 0);
-  return(m);
+
+  float taille = (m->ncols * m->nrows) + (m->ncols * m->nrows) % size;
+  float marge = (m->ncols * m->nrows) % size;
+
+  realloc(m->terrain, marge * sizeof(float));
+
+  ligne_per_proc = (taille / m->ncols) / size;
+  col_per_proc = m->ncols ; 
+  int element_per_proc = ligne_per_proc * m->ncols;
+
+  MPI_Scatter(&m->terrain[0], element_per_proc, MPI_FLOAT,
+              &m->terrain[0], element_per_proc, MPI_FLOAT, 0, MPI_COMM_WORLD);
+
+  MPI_Bcast(&ligne_per_proc, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  m->nrows = ligne_per_proc;
+ 
+  MPI_Bcast(&col_per_proc, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  m->nrows = ligne_per_proc;
+ 
+  MPI_Bcast(&max, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+
+  return (m);
 }
 
 void mnt_write(mnt *m, FILE *f)
 {
+
+  float *recv;
+  CHECK((recv = malloc(100 * sizeof(float))) != NULL);
+
+  MPI_Gather(&m->terrain[0], 50, MPI_FLOAT, recv, 50, MPI_FLOAT, 0, MPI_COMM_WORLD);
+
   CHECK(f != NULL);
 
-  fprintf(f, "%d\n", m->ncols);
-  fprintf(f, "%d\n", m->nrows);
-  fprintf(f, "%.3f\n", m->xllcorner);
-  fprintf(f, "%.3f\n", m->yllcorner);
-  fprintf(f, "%.3f\n", m->cellsize);
-  fprintf(f, "%.3f\n", m->no_data);
-
-  for(int i = 0 ; i < m->nrows ; i++)
+  if (rank == 0)
   {
-    for(int j = 0 ; j < m->ncols ; j++)
+    memcpy(m->terrain, recv, 100);
+    for (int i = 0; i < m->nrows; i++)
     {
-      fprintf(f, "%.3f ", TERRAIN(m,i,j));
+      for (int j = 0; j < m->ncols; j++)
+      {
+        fprintf(f, "%.2f ", TERRAIN(m, i, j));
+      }
+      fprintf(f, "\n");
     }
-    fprintf(f, "\n");
   }
 }
 
 void mnt_write_lakes(mnt *m, mnt *d, FILE *f)
 {
+
+  float *recv;
+  CHECK((recv = malloc(100 * sizeof(float))) != NULL);
+
+  MPI_Gather(&m->terrain[0], 50, MPI_FLOAT, recv, 50, MPI_FLOAT, 0, MPI_COMM_WORLD);
+
   CHECK(f != NULL);
 
-  for(int i = 0 ; i < m->nrows ; i++)
+  memcpy(m->terrain, recv, 100);
+
+  if (rank == 0)
   {
-    for(int j = 0 ; j < m->ncols ; j++)
+    for (int i = 0; i < m->nrows * m->nrows; i++)
     {
-      const float dif = TERRAIN(d,i,j)-TERRAIN(m,i,j);
-      fprintf(f, "%c", (dif>1.)?'#':(dif>0.)?'+':'.' );
+      printf(" %f \n", m->terrain[i]);
     }
-    fprintf(f, "\n");
   }
 }
