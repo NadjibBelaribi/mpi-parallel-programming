@@ -10,6 +10,7 @@
 // courante en train d'être calculée (doit augmenter) et l'itération du calcul
 #define DARBOUX_PPRINT
 
+#define PRECISION_FLOTTANT 1.e-5
 
 // pour accéder à un tableau de flotant linéarisé (ncols doit être défini) :
 #define WTERRAIN(w,i,j) (w[(i)*ncols+(j)])
@@ -32,12 +33,12 @@ float *init_W(const mnt *restrict m)
   CHECK((W = malloc(ncols * nrows * sizeof(float))) != NULL);
 
   // initialisation W
-  const float max = m->max;
+  const float max = max_terrain(m) + 10.;
   for(int i = 0 ; i < nrows ; i++)
   {
     for(int j = 0 ; j < ncols ; j++)
     {
-      if(i==0 || i==nrows-1 || j==0 || j==ncols-1)
+      if(i==0 || i==nrows-1 || j==0 || j==ncols-1 || TERRAIN(m,i,j) == m->no_data)
         WTERRAIN(W,i,j) = TERRAIN(m,i,j);
       else
         WTERRAIN(W,i,j) = max;
@@ -81,7 +82,7 @@ int calcul_Wij(float *restrict W, const float *restrict Wprec, const mnt *m, con
   // on prend la valeur précédente...
   WTERRAIN(W,i,j) = WTERRAIN(Wprec,i,j);
   // ... sauf si :
-  if(WTERRAIN(Wprec,i,j) > TERRAIN(m,i,j) && TERRAIN(m,i,j) != m->no_data)
+  if(WTERRAIN(Wprec,i,j) > TERRAIN(m,i,j))
   {
     // parcourir les 8 voisins haut/bas + gauche/droite
     for(int v=0; v<8; v++)
@@ -94,8 +95,16 @@ int calcul_Wij(float *restrict W, const float *restrict Wprec, const mnt *m, con
       // sont bien initialisés avec les valeurs des bords du mnt
       CHECK(n1>=0 && n1<nrows && n2>=0 && n2<ncols);
 
+      // si le voisin est inconnu, on l'ignore et passe au suivant
+      if(WTERRAIN(Wprec,n1,n2) == m->no_data)
+        continue;
+
+      CHECK(TERRAIN(m,i,j)>m->no_data);
+      CHECK(WTERRAIN(Wprec,i,j)>m->no_data);
+      CHECK(WTERRAIN(Wprec,n1,n2)>m->no_data);
+
       // il est important de mettre cette valeur dans un temporaire, sinon le
-      // compilo fait des arrondis flotants différents dans les tests ci-dessous
+      // compilo fait des arrondis flotants divergents dans les tests ci-dessous
       const float Wn = WTERRAIN(Wprec,n1,n2) + EPSILON;
       if(TERRAIN(m,i,j) >= Wn)
       {

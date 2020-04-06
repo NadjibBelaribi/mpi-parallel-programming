@@ -10,17 +10,14 @@
 #include<float.h>
 #include <mpi.h>
 
+ 
 extern int rank, size;
-struct bcastParam recvParam;
-
 
 mnt *mnt_read(char *fname)
 {
   mnt *m;
   FILE *f;
-  int ligne_per_proc, col_per_proc, elem_per_proc;
   float max ;
-
   CHECK((m = malloc(sizeof(*m))) != NULL);
   CHECK((f = fopen(fname, "r")) != NULL);
 
@@ -41,81 +38,53 @@ mnt *mnt_read(char *fname)
     if (m->terrain[i] > max)
       max = m->terrain[i];
   }
-  CHECK(fclose(f) == 0);
-
-  float taille = (m->ncols * m->nrows) + (m->ncols * m->nrows) % size;
-  float marge = (m->ncols * m->nrows) % size;
-
-  realloc(m->terrain, marge * sizeof(float));
-
-  ligne_per_proc = (taille / m->ncols) / size;
-  col_per_proc = m->ncols ; 
-  elem_per_proc = ligne_per_proc * m->ncols;
-
-
-  //Ici j'ai juste mit les val calculé dans ma structure//
-  recvParam.ligne_per_proc=ligne_per_proc;
-  recvParam.col_per_proc=col_per_proc;
-  recvParam.max=max;
-
-  /*MPI_Bcast(&elem_per_proc, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-  MPI_Bcast(&ligne_per_proc, 1, MPI_INT, 0, MPI_COMM_WORLD);
   
-  MPI_Bcast(&col_per_proc, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  
-  MPI_Bcast(&max, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);*/
+  m->max = max ;
+  float first_size = m->ncols * m->nrows ;
+  if(m->nrows % size != 0 )
+    m->nrows =  (m->nrows +size - (m->nrows % size))/size ; 
+  else 
+    m->nrows = m->nrows / size ; 
+  float marge = (m->ncols * m->nrows)-first_size ;
+  CHECK(realloc(m->terrain, marge * sizeof(float)) != NULL) ;
 
-  //MPI_Bcast(&recvParam, 1, Mpi_bcastParam, 0, MPI_COMM_WORLD);
 
- /* MPI_Scatter(&m->terrain[0], elem_per_proc, MPI_FLOAT,
-              &m->terrain[0], elem_per_proc, MPI_FLOAT, 0, MPI_COMM_WORLD);*/
-              
-
-  return (m);
+CHECK(fclose(f) == 0);
+  return(m);
 }
 
 void mnt_write(mnt *m, FILE *f)
 {
-
-  float *recv;
-  CHECK((recv = malloc(100 * sizeof(float))) != NULL);
-
-  MPI_Gather(&m->terrain[0], 50, MPI_FLOAT, recv, 50, MPI_FLOAT, 0, MPI_COMM_WORLD);
-
   CHECK(f != NULL);
 
-  if (rank == 0)
+  fprintf(f, "%d\n", m->ncols);
+  fprintf(f, "%d\n", m->nrows);
+  fprintf(f, "%.2f\n", m->xllcorner);
+  fprintf(f, "%.2f\n", m->yllcorner);
+  fprintf(f, "%.2f\n", m->cellsize);
+  fprintf(f, "%.2f\n", m->no_data);
+
+  for(int i = 0 ; i < m->nrows ; i++)
   {
-    memcpy(m->terrain, recv, 100);
-    for (int i = 0; i < m->nrows; i++)
+    for(int j = 0 ; j < m->ncols ; j++)
     {
-      for (int j = 0; j < m->ncols; j++)
-      {
-        fprintf(f, "%.2f ", TERRAIN(m, i, j));
-      }
-      fprintf(f, "\n");
+      fprintf(f, "%.2f ", TERRAIN(m,i,j));
     }
+    fprintf(f, "\n");
   }
 }
 
 void mnt_write_lakes(mnt *m, mnt *d, FILE *f)
 {
-
-  float *recv;
-  CHECK((recv = malloc(100 * sizeof(float))) != NULL);
-
-  MPI_Gather(&m->terrain[0], 50, MPI_FLOAT, recv, 50, MPI_FLOAT, 0, MPI_COMM_WORLD);
-
   CHECK(f != NULL);
 
-  memcpy(m->terrain, recv, 100);
-
-  if (rank == 0)
+  for(int i = 0 ; i < m->nrows ; i++)
   {
-    for (int i = 0; i < m->nrows * m->nrows; i++)
+    for(int j = 0 ; j < m->ncols ; j++)
     {
-      printf(" %f \n", m->terrain[i]);
+      const float dif = TERRAIN(d,i,j)-TERRAIN(m,i,j);
+      fprintf(f, "%c", (dif>1.)?'#':(dif>0.)?'+':'.' );
     }
+    fprintf(f, "\n");
   }
 }

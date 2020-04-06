@@ -6,92 +6,86 @@
 #include "io.h"
 #include "darboux.h"
 
-
-int rank,size ; 
-<<<<<<< HEAD
-=======
-extern int ligne_per_proc,col_per_proc,elem_per_proc ; 
-extern float max ;  
-extern struct bcastParam recvParam;
-MPI_Datatype Mpi_bcastParam;
->>>>>>> ac4027a70920be81dc6b3c316e643a2226c75d09
+int rank, size;
 
 int main(int argc, char **argv)
 {
-  mnt *m, *d;
-  
 
-
-  if(argc < 2)
+  if (argc < 2)
   {
     fprintf(stderr, "Usage: %s <input filename> [<output filename>]\n", argv[0]);
     exit(1);
   }
-  int ligne_per_proc,col_per_proc,elem_per_proc ; 
-float max ; 
 
-  if(MPI_Init(&argc, &argv))
+  mnt *m, *d;
+  mnt *part_m;
+  MPI_Datatype Mpi_bcastParam;
+  float *matrix,max;
+  struct bcastParam recvParam;
+
+  if (MPI_Init(&argc, &argv))
   {
     fprintf(stderr, "erreur MPI_Init!\n");
-    return(1);
+    return (1);
   }
 
+  /* tout ce qui suit permet de créer le type MPI qui contient toutes les infos*/
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
- 
-
- /* tout ce qui suit permet de créer le type MPI qui contient toutes les infos
- ** Les colonnes, les lignes et le max
- ** la structure est dans io.h
- ***/
-  MPI_Datatype type[3]={MPI_INT,MPI_INT,MPI_FLOAT};
-  int blocklen[3]={1,1,1};
+  MPI_Datatype type[3] = {MPI_INT, MPI_INT, MPI_FLOAT};
+  int blocklen[3] = {1, 1, 1};
   MPI_Aint disp[3];
 
-  
-  
-  disp[0] = (char*)&recvParam.ligne_per_proc - (char*)&recvParam;
-  disp[1] = (char*)&recvParam.col_per_proc - (char*)&recvParam;
-  disp[2] = (char*)&recvParam.max - (char*)&recvParam;
-  
+  disp[0] = (char *)&recvParam.ligne_per_proc - (char *)&recvParam;
+  disp[1] = (char *)&recvParam.col_per_proc - (char *)&recvParam;
+  disp[2] = (char *)&recvParam.max - (char *)&recvParam;
 
   MPI_Type_create_struct(3, blocklen, disp, type, &Mpi_bcastParam);
   MPI_Type_commit(&Mpi_bcastParam);
+
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+
   /******************************************/
 
- printf("je suis %d / %d \n",rank,size) ;
- 
-  // READ INPUT
-     if(rank == 0 ) 
-      m = mnt_read(argv[1]);
+  printf("je suis %d / %d \n", rank, size);
 
-  MPI_Barrier(MPI_COMM_WORLD) ;
+  // READ INPUT
+  if (rank == 0)
+  {
+    m = mnt_read(argv[1]);
+    recvParam.ligne_per_proc = m->nrows;
+    recvParam.col_per_proc = m->ncols;
+    recvParam.max = m->max;
+    matrix = m->terrain;
+  }
 
   /***Tout le monde doit effectuer le MPI_Bcast sinon ils reçoivent pas****/
 
   MPI_Bcast(&recvParam, 1, Mpi_bcastParam, 0, MPI_COMM_WORLD);
 
-  printf("Je suis %d: %d, %d, %f\n", rank,recvParam.ligne_per_proc,recvParam.col_per_proc,recvParam.max);
+  part_m = (mnt *)malloc(sizeof(mnt));
+  part_m->nrows = recvParam.ligne_per_proc;
+  part_m->ncols = recvParam.col_per_proc;
+  part_m->max = recvParam.max;
 
-  if (rank != 0 ) 
-  {
-    //MPI_Bcast(&recvParam, 1, Mpi_bcastParam, 0, MPI_COMM_WORLD);
-    m = (mnt*)malloc(sizeof(mnt)) ; 
-    m->terrain = malloc(sizeof(float)*elem_per_proc) ;
-    
-  }
-  /*m->nrows = ligne_per_proc;
-  m->ncols = col_per_proc;
-  m->max = max;*/
-  m->nrows = recvParam.ligne_per_proc;
-  m->ncols = recvParam.col_per_proc;
-  m->max = recvParam.max;
-  
-  printf("proc N %d / %d avec rows ; %d cols ; %d  max ; %f \n",rank,size,m->nrows ,m->ncols,max)  ;
+  part_m->terrain = malloc(sizeof(float) * part_m->ncols * part_m->nrows);
+
+  MPI_Scatter(matrix, part_m->ncols * part_m->nrows, MPI_FLOAT,
+              part_m->terrain, part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
+
+  printf("proc N %d / %d avec rows ; %d cols ; %d \n", rank, size, part_m->nrows, part_m->ncols);
 
   // COMPUTE
-  //d = darboux(m);
+  //d = darboux(part_m);
+
+  MPI_Gather(part_m->terrain, part_m->ncols * part_m->nrows, MPI_FLOAT, m->terrain, part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
+
+  if (rank == 0)
+  {
+    for (int i = 0; i < part_m->ncols * part_m->nrows * size; i++)
+      printf(" %d %f", rank, m->terrain[i]);
+    printf("\n");
+  }
 
   // WRITE OUTPUT
   /*FILE *out;
@@ -103,7 +97,7 @@ float max ;
   if(argc == 3)
     fclose(out);
   else
-    mnt_write_lakes(m, d, stdout);
+    mnt_write_lakes(part_m, d, stdout);
 
   // free
   free(m->terrain);
@@ -111,7 +105,7 @@ float max ;
   free(d->terrain);
   free(d);*/
 
-    MPI_Finalize();
+  MPI_Finalize();
 
-  return(0);
+  return (0);
 }

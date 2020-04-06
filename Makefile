@@ -1,5 +1,6 @@
 CC=mpicc
-CFLAGS=-Wall -O3 -march=native -g
+# CFLAGS=-Wall -O3 -march=native -g -fopenmp
+CFLAGS=-Wall -O1 -g -fopenmp
 LDFLAGS=$(CFLAGS)
 
 OBJ=$(patsubst %.c,%.o,$(wildcard *.c))
@@ -11,7 +12,7 @@ clean:
 	rm $(OBJ) main
 
 test: main
-	./main input/mini.mnt
+	./main input/small.mnt
 
 # si un .h ou le makefile change tout recompiler :
 $(OBJ): $(wildcard *.h) Makefile
