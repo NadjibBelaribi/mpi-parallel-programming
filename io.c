@@ -10,14 +10,15 @@
  #include<float.h>
 #include <mpi.h>
 
-int ligne_per_proc, col_per_proc, elem_per_proc;
-float max ;
 extern int rank, size;
 
 mnt *mnt_read(char *fname)
 {
   mnt *m;
   FILE *f;
+  int ligne_per_proc, col_per_proc, elem_per_proc;
+  float max ;
+
   CHECK((m = malloc(sizeof(*m))) != NULL);
   CHECK((f = fopen(fname, "r")) != NULL);
 
@@ -57,8 +58,9 @@ mnt *mnt_read(char *fname)
   
   MPI_Bcast(&max, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
-  MPI_Scatter(&m->terrain[0], elem_per_proc, MPI_FLOAT,
-              &m->terrain[0], elem_per_proc, MPI_FLOAT, 0, MPI_COMM_WORLD);
+ /* MPI_Scatter(&m->terrain[0], elem_per_proc, MPI_FLOAT,
+              &m->terrain[0], elem_per_proc, MPI_FLOAT, 0, MPI_COMM_WORLD);*/
+              
 
   return (m);
 }

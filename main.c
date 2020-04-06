@@ -7,8 +7,6 @@
 #include "darboux.h"
 
 int rank,size ; 
-extern int ligne_per_proc,col_per_proc,elem_per_proc ; 
-extern float max ;  
 
 int main(int argc, char **argv)
 {
@@ -18,6 +16,8 @@ int main(int argc, char **argv)
     fprintf(stderr, "Usage: %s <input filename> [<output filename>]\n", argv[0]);
     exit(1);
   }
+  int ligne_per_proc,col_per_proc,elem_per_proc ; 
+float max ; 
 
   if(MPI_Init(&argc, &argv))
   {
