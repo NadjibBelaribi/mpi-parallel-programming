@@ -7,7 +7,7 @@
 #include "darboux.h"
 
 int rank,size ; 
-extern int ligne_per_proc,col_per_proc ; 
+extern int ligne_per_proc,col_per_proc,elem_per_proc ; 
 extern float max ;  
 
 int main(int argc, char **argv)
@@ -34,8 +34,14 @@ int main(int argc, char **argv)
      if(rank == 0 ) 
       m = mnt_read(argv[1]);
 
-   MPI_Barrier(MPI_COMM_WORLD) ;
+  MPI_Barrier(MPI_COMM_WORLD) ;
 
+  if (rank != 0 ) 
+  {
+      m = (mnt*)malloc(sizeof(mnt)) ; 
+     m->terrain = malloc(sizeof(float)*elem_per_proc) ;
+
+  }
   m->nrows = ligne_per_proc;
   m->ncols = col_per_proc;
   m->max = max;
@@ -58,7 +64,7 @@ int main(int argc, char **argv)
     mnt_write_lakes(m, d, stdout);
 
   // free
- /* free(m->terrain);
+  free(m->terrain);
   free(m);
   free(d->terrain);
   free(d);*/

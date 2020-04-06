@@ -10,7 +10,7 @@
  #include<float.h>
 #include <mpi.h>
 
-int ligne_per_proc, col_per_proc;
+int ligne_per_proc, col_per_proc, elem_per_proc;
 float max ;
 extern int rank, size;
 
@@ -47,18 +47,18 @@ mnt *mnt_read(char *fname)
 
   ligne_per_proc = (taille / m->ncols) / size;
   col_per_proc = m->ncols ; 
-  int element_per_proc = ligne_per_proc * m->ncols;
+  elem_per_proc = ligne_per_proc * m->ncols;
 
-  MPI_Scatter(&m->terrain[0], element_per_proc, MPI_FLOAT,
-              &m->terrain[0], element_per_proc, MPI_FLOAT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&elem_per_proc, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
   MPI_Bcast(&ligne_per_proc, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  m->nrows = ligne_per_proc;
- 
+  
   MPI_Bcast(&col_per_proc, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  m->nrows = ligne_per_proc;
- 
+  
   MPI_Bcast(&max, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+
+  MPI_Scatter(&m->terrain[0], elem_per_proc, MPI_FLOAT,
+              &m->terrain[0], elem_per_proc, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
   return (m);
 }
