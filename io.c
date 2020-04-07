@@ -18,6 +18,10 @@ mnt *mnt_read(char *fname)
   mnt *m;
   FILE *f;
   float max ;
+  int rows ;
+
+   
+
   CHECK((m = malloc(sizeof(*m))) != NULL);
   CHECK((f = fopen(fname, "r")) != NULL);
 
@@ -28,7 +32,13 @@ mnt *mnt_read(char *fname)
   CHECK(fscanf(f, "%f", &m->cellsize) == 1);
   CHECK(fscanf(f, "%f", &m->no_data) == 1);
 
-  CHECK((m->terrain = malloc(m->ncols * m->nrows * sizeof(float))) != NULL);
+  if(m->nrows % size != 0 )
+    rows =  (m->nrows +size - (m->nrows % size))/size ; 
+  else 
+    rows = m->nrows / size ; 
+  float taille = (m->ncols * rows * size) ;
+
+  CHECK((m->terrain = malloc(taille * sizeof(float))) != NULL);
 
   max = FLT_MIN_10_EXP - 37;
 
@@ -38,16 +48,9 @@ mnt *mnt_read(char *fname)
     if (m->terrain[i] > max)
       max = m->terrain[i];
   }
+   m->max = max ;
+   m->nrows = rows ;
   
-  m->max = max ;
-  float first_size = m->ncols * m->nrows ;
-  if(m->nrows % size != 0 )
-    m->nrows =  (m->nrows +size - (m->nrows % size))/size ; 
-  else 
-    m->nrows = m->nrows / size ; 
-  float marge = (m->ncols * m->nrows)-first_size ;
-  CHECK(realloc(m->terrain, marge * sizeof(float)) != NULL) ;
-
 
 CHECK(fclose(f) == 0);
   return(m);

@@ -3,10 +3,12 @@
 
 #include "type.h"
 
-struct bcastParam{
+struct bcastParam
+{
   int ligne_per_proc;
   int col_per_proc;
   float max;
+  float no_data;
 };
 
 mnt *mnt_read(char *fname);

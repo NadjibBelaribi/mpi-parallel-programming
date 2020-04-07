@@ -18,9 +18,9 @@ int main(int argc, char **argv)
   }
 
   mnt *m, *d;
-  mnt *part_m;
+  mnt *part_m = NULL;
   MPI_Datatype Mpi_bcastParam;
-  float *matrix,max;
+  float *matrix = NULL;
   struct bcastParam recvParam;
 
   if (MPI_Init(&argc, &argv))
@@ -29,17 +29,18 @@ int main(int argc, char **argv)
     return (1);
   }
 
-  /* tout ce qui suit permet de créer le type MPI qui contient toutes les infos*/
+  /* Creation type pour le broadcast */
 
-  MPI_Datatype type[3] = {MPI_INT, MPI_INT, MPI_FLOAT};
-  int blocklen[3] = {1, 1, 1};
-  MPI_Aint disp[3];
+  MPI_Datatype type[4] = {MPI_INT, MPI_INT, MPI_FLOAT, MPI_FLOAT};
+  int blocklen[4] = {1, 1, 1, 1};
+  MPI_Aint disp[4];
 
   disp[0] = (char *)&recvParam.ligne_per_proc - (char *)&recvParam;
   disp[1] = (char *)&recvParam.col_per_proc - (char *)&recvParam;
   disp[2] = (char *)&recvParam.max - (char *)&recvParam;
+  disp[3] = (char *)&recvParam.no_data - (char *)&recvParam;
 
-  MPI_Type_create_struct(3, blocklen, disp, type, &Mpi_bcastParam);
+  MPI_Type_create_struct(4, blocklen, disp, type, &Mpi_bcastParam);
   MPI_Type_commit(&Mpi_bcastParam);
 
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -47,8 +48,7 @@ int main(int argc, char **argv)
 
   /******************************************/
 
-  printf("je suis %d / %d \n", rank, size);
-
+ 
   // READ INPUT
   if (rank == 0)
   {
@@ -56,36 +56,44 @@ int main(int argc, char **argv)
     recvParam.ligne_per_proc = m->nrows;
     recvParam.col_per_proc = m->ncols;
     recvParam.max = m->max;
+    recvParam.no_data = m->no_data;
+
     matrix = m->terrain;
   }
 
-  /***Tout le monde doit effectuer le MPI_Bcast sinon ils reçoivent pas****/
+    part_m = (mnt *)malloc(sizeof(mnt));
 
   MPI_Bcast(&recvParam, 1, Mpi_bcastParam, 0, MPI_COMM_WORLD);
 
-  part_m = (mnt *)malloc(sizeof(mnt));
   part_m->nrows = recvParam.ligne_per_proc;
   part_m->ncols = recvParam.col_per_proc;
   part_m->max = recvParam.max;
+  part_m->no_data = recvParam.no_data;
 
-  part_m->terrain = malloc(sizeof(float) * part_m->ncols * part_m->nrows);
+  // allouer 2 lignes additionneles pour l'echange 
+
+  float taille = part_m->ncols * (part_m->nrows + 1) ; 
+  part_m->terrain = malloc(sizeof(float) * taille);
 
   MPI_Scatter(matrix, part_m->ncols * part_m->nrows, MPI_FLOAT,
-              part_m->terrain, part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
+              &part_m->terrain[part_m->ncols], part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
-  printf("proc N %d / %d avec rows ; %d cols ; %d \n", rank, size, part_m->nrows, part_m->ncols);
-
-  // COMPUTE
+   // COMPUTE
   //d = darboux(part_m);
 
-  MPI_Gather(part_m->terrain, part_m->ncols * part_m->nrows, MPI_FLOAT, m->terrain, part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
+  MPI_Gather(&part_m->terrain[part_m->ncols], part_m->ncols * part_m->nrows, MPI_FLOAT,
+            m->terrain, part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
   if (rank == 0)
   {
     for (int i = 0; i < part_m->ncols * part_m->nrows * size; i++)
-      printf(" %d %f", rank, m->terrain[i]);
-    printf("\n");
+      {
+        printf(" %f ", m->terrain[i]);
+        if(i%10 == 0) printf("\n") ;
+       }
   }
+printf("\n");
+
 
   // WRITE OUTPUT
   /*FILE *out;
@@ -98,12 +106,19 @@ int main(int argc, char **argv)
     fclose(out);
   else
     mnt_write_lakes(part_m, d, stdout);
-
+*/
   // free
-  free(m->terrain);
-  free(m);
-  free(d->terrain);
-  free(d);*/
+  if (rank == 0)
+  {
+    free(m->terrain);
+    free(m);
+    free(matrix);
+  }
+
+  //free(part_m->terrain);
+  //free(part_m);
+  // free(d->terrain);
+  //free(d);*/
 
   MPI_Finalize();
 
