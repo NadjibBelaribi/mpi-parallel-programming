@@ -79,9 +79,9 @@ int main(int argc, char **argv)
               &part_m->terrain[part_m->ncols], part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
    // COMPUTE
-  //d = darboux(part_m);
+  d = darboux(part_m);
 
-  MPI_Gather(&part_m->terrain[part_m->ncols], part_m->ncols * part_m->nrows, MPI_FLOAT,
+  MPI_Gather(&d->terrain[part_m->ncols], part_m->ncols * part_m->nrows, MPI_FLOAT,
             m->terrain, part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
   if (rank == 0)
@@ -96,7 +96,7 @@ printf("\n");
 
 
   // WRITE OUTPUT
-  /*FILE *out;
+  FILE *out;
   if(argc == 3)
     out = fopen(argv[2], "w");
   else
@@ -106,7 +106,7 @@ printf("\n");
     fclose(out);
   else
     mnt_write_lakes(part_m, d, stdout);
-*/
+
   // free
   if (rank == 0)
   {
@@ -115,10 +115,10 @@ printf("\n");
     free(matrix);
   }
 
-  //free(part_m->terrain);
-  //free(part_m);
-  // free(d->terrain);
-  //free(d);*/
+  free(part_m->terrain);
+  free(part_m);
+  free(d->terrain);
+  free(d);
 
   MPI_Finalize();
 
