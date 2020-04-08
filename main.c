@@ -83,7 +83,7 @@ int main(int argc, char **argv)
 
   MPI_Gather(&d->terrain[part_m->ncols], part_m->ncols * part_m->nrows, MPI_FLOAT,
             m->terrain, part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
-
+/*
   if (rank == 0)
   {
     for (int i = 0; i < part_m->ncols * part_m->nrows * size; i++)
@@ -91,8 +91,7 @@ int main(int argc, char **argv)
         printf(" %f ", m->terrain[i]);
         if(i%10 == 0) printf("\n") ;
        }
-  }
-printf("\n");
+  }*/
 
 
   // WRITE OUTPUT

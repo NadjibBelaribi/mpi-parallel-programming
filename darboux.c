@@ -147,47 +147,60 @@ mnt *darboux(const mnt *restrict m)
   Wprec = init_W(m);
 
   // calcul : boucle principale
-  int end,modif = 1;
+  int end, modif = 1;
   while (modif)
   {
 
     if (rank == 0)
     {
       // send last to next
-      MPI_Send(&Wprec[(nrows -2)*ncols],ncols, MPI_FLOAT,rank+1,91, MPI_COMM_WORLD);
+      MPI_Send(&Wprec[(nrows - 2) * ncols], ncols, MPI_FLOAT, rank + 1, 91, MPI_COMM_WORLD);
 
       // recv first of next
-      MPI_Recv(&Wprec[nrows-1], ncols, MPI_FLOAT, rank + 1,91, MPI_COMM_WORLD, NULL);
+      MPI_Recv(&Wprec[nrows - 1], ncols, MPI_FLOAT, rank + 1, 91, MPI_COMM_WORLD, NULL);
     }
     else if (rank == size - 1)
     {
       // send first to precedent
-      MPI_Send(&Wprec[ncols], ncols, MPI_FLOAT,rank-1,91, MPI_COMM_WORLD);
+      MPI_Send(&Wprec[ncols], ncols, MPI_FLOAT, rank - 1, 91, MPI_COMM_WORLD);
 
       // recv last of precedent
-      MPI_Recv(&Wprec[0], ncols, MPI_FLOAT, rank - 1,91, MPI_COMM_WORLD, NULL);
+      MPI_Recv(&Wprec[0], ncols, MPI_FLOAT, rank - 1, 91, MPI_COMM_WORLD, NULL);
     }
     else
     {
 
       // send first to precedent
-      MPI_Send(&Wprec[ncols], ncols, MPI_FLOAT, rank -1 ,91, MPI_COMM_WORLD);
+      MPI_Send(&Wprec[ncols], ncols, MPI_FLOAT, rank - 1, 91, MPI_COMM_WORLD);
 
-        //recv last from precedent
-      MPI_Recv(&Wprec[0], ncols, MPI_FLOAT, rank - 1,91, MPI_COMM_WORLD, NULL);
-    
-    //send last to next
-      MPI_Send(&Wprec[(nrows -2)*ncols], ncols, MPI_FLOAT, rank +1 ,91, MPI_COMM_WORLD);
+      //recv last from precedent
+      MPI_Recv(&Wprec[0], ncols, MPI_FLOAT, rank - 1, 91, MPI_COMM_WORLD, NULL);
+
+      //send last to next
+      MPI_Send(&Wprec[(nrows - 2) * ncols], ncols, MPI_FLOAT, rank + 1, 91, MPI_COMM_WORLD);
 
       // recv first from next
-      MPI_Recv(&Wprec[(nrows -1)*ncols], ncols, MPI_FLOAT, rank + 1,91, MPI_COMM_WORLD, NULL);
+      MPI_Recv(&Wprec[(nrows - 1) * ncols], ncols, MPI_FLOAT, rank + 1, 91, MPI_COMM_WORLD, NULL);
     }
-      
-    
+
+    if (rank == 1)
+    {
+      for (int i = 0; i < nrows; i++)
+      {
+        for (int j = 0; j < ncols; j++)
+        {
+
+        printf(" %f ", WTERRAIN(Wprec,i,j));
+        }
+           printf("\n");
+      }
+    }
+
+    return;
     modif = 0; // sera mis à 1 s'il y a une modification
 
     // calcule le nouveau W fonction de l'ancien (Wprec) en chaque point [i,j]
-    for (int i = 1; i < nrows -1; i++)
+    for (int i = 1; i < nrows - 1; i++)
     {
       for (int j = 0; j < ncols; j++)
       {
@@ -197,7 +210,7 @@ mnt *darboux(const mnt *restrict m)
       }
     }
 
-    MPI_Reduce(&modif, &end, 1, MPI_INT, MPI_LOR,0, MPI_COMM_WORLD) ; 
+    MPI_Reduce(&modif, &end, 1, MPI_INT, MPI_LOR, 0, MPI_COMM_WORLD);
 
 #ifdef DARBOUX_PPRINT
     dpprint();
