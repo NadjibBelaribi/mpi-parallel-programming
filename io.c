@@ -1,4 +1,4 @@
-// fonctions d'entrée/sortie
+ // fonctions d'entrée/sortie
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -11,7 +11,7 @@
 #include <mpi.h>
 
  
-extern int rank, size;
+extern int  size;
 
 mnt *mnt_read(char *fname)
 {

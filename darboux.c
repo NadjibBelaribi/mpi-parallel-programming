@@ -1,4 +1,4 @@
-// fonction de calcul principale : algorithme de Darboux
+ // fonction de calcul principale : algorithme de Darboux
 // (remplissage des cuvettes d'un MNT)
 #include <string.h>
 #include <mpi.h>
@@ -14,8 +14,13 @@
 #define PRECISION_FLOTTANT 1.e-5
 
 // pour accéder à un tableau de flotant linéarisé (ncols doit être défini) :
+<<<<<<< HEAD
 #define WTERRAIN(w, i, j) (w[(i)*ncols + (j)])
 extern int rank, size;
+=======
+#define WTERRAIN(w,i,j) (w[(i)*ncols+(j)])
+extern int  rank;
+>>>>>>> 5bb234f9fd27a1d55e8571d867647214121a8f33
 
 // calcule la valeur max de hauteur sur un terrain
 float max_terrain(const mnt *restrict m)
@@ -33,12 +38,21 @@ float *init_W(const mnt *restrict m)
   const int ncols = m->ncols, nrows = m->nrows + 2;
   float *restrict W;
 
+<<<<<<< HEAD
+=======
+ 
+>>>>>>> 5bb234f9fd27a1d55e8571d867647214121a8f33
   CHECK((W = malloc(ncols * nrows * sizeof(float))) != NULL);
 
   // initialisation W
   const float max = m->max + 10.;
+<<<<<<< HEAD
 
   for (int i = 1; i < nrows - 1; i++)
+=======
+  
+  for(int i = 0 ; i < nrows ; i++)
+>>>>>>> 5bb234f9fd27a1d55e8571d867647214121a8f33
   {
     for (int j = 0; j < ncols; j++)
     {

@@ -1,4 +1,4 @@
-// programme principal
+ // programme principal
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
@@ -115,6 +115,8 @@ int main(int argc, char **argv)
     free(m);
     free(matrix);
   }
+printf("\n");
+
 
   free(part_m->terrain);
   free(part_m);
