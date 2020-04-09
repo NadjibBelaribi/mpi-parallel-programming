@@ -42,8 +42,8 @@ float *init_W(const mnt *restrict m)
   {
     for (int j = 0; j < ncols; j++)
     {
-      if ((i == 1 && rank == 0) || (i == nrows - 2 && rank == size - 1) || j == 0 || j == ncols - 1 || TERRAIN(m, i, j) == m->no_data)
-        WTERRAIN(W, i, j) = TERRAIN(m, i, j);
+      if ((i == 1 && rank == 0) || (i == nrows - 2 && rank == size - 1) || j == 0 || j == ncols - 1 || TERRAIN(m, i - 1, j) == m->no_data)
+        WTERRAIN(W, i, j) = TERRAIN(m, i - 1, j);
       else
         WTERRAIN(W, i, j) = max;
     }
@@ -79,13 +79,13 @@ const int VOISINS[8][2] = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1},
 // inutile de modifier cette fonction (elle est sensible...):
 int calcul_Wij(float *restrict W, const float *restrict Wprec, const mnt *m, const int i, const int j)
 {
-  const int nrows = m->nrows, ncols = m->ncols;
+  const int nrows = m->nrows + 2, ncols = m->ncols;
   int modif = 0;
 
   // on prend la valeur précédente...
   WTERRAIN(W, i, j) = WTERRAIN(Wprec, i, j);
   // ... sauf si :
-  if (WTERRAIN(Wprec, i, j) > TERRAIN(m, i, j))
+  if (WTERRAIN(Wprec, i, j) > TERRAIN(m, i - 1, j))
   {
     // parcourir les 8 voisins haut/bas + gauche/droite
     for (int v = 0; v < 8; v++)
@@ -102,16 +102,16 @@ int calcul_Wij(float *restrict W, const float *restrict Wprec, const mnt *m, con
       if (WTERRAIN(Wprec, n1, n2) == m->no_data)
         continue;
 
-      CHECK(TERRAIN(m, i, j) > m->no_data);
+      CHECK(TERRAIN(m, i - 1, j) > m->no_data);
       CHECK(WTERRAIN(Wprec, i, j) > m->no_data);
       CHECK(WTERRAIN(Wprec, n1, n2) > m->no_data);
 
       // il est important de mettre cette valeur dans un temporaire, sinon le
       // compilo fait des arrondis flotants divergents dans les tests ci-dessous
       const float Wn = WTERRAIN(Wprec, n1, n2) + EPSILON;
-      if (TERRAIN(m, i, j) >= Wn)
+      if (TERRAIN(m, i - 1, j) >= Wn)
       {
-        WTERRAIN(W, i, j) = TERRAIN(m, i, j);
+        WTERRAIN(W, i, j) = TERRAIN(m, i - 1, j);
         modif = 1;
 #ifdef DARBOUX_PPRINT
         if (WTERRAIN(W, i, j) < min_darboux)
@@ -147,8 +147,8 @@ mnt *darboux(const mnt *restrict m)
   Wprec = init_W(m);
 
   // calcul : boucle principale
-  int end, modif = 1;
-  while (modif)
+  int end = 1, modif = 0;
+  while (end)
   {
 
     if (rank == 0)
@@ -157,7 +157,7 @@ mnt *darboux(const mnt *restrict m)
       MPI_Send(&Wprec[(nrows - 2) * ncols], ncols, MPI_FLOAT, rank + 1, 91, MPI_COMM_WORLD);
 
       // recv first of next
-      MPI_Recv(&Wprec[nrows - 1], ncols, MPI_FLOAT, rank + 1, 91, MPI_COMM_WORLD, NULL);
+      MPI_Recv(&Wprec[(nrows - 1) * ncols], ncols, MPI_FLOAT, rank + 1, 91, MPI_COMM_WORLD, NULL);
     }
     else if (rank == size - 1)
     {
@@ -183,23 +183,10 @@ mnt *darboux(const mnt *restrict m)
       MPI_Recv(&Wprec[(nrows - 1) * ncols], ncols, MPI_FLOAT, rank + 1, 91, MPI_COMM_WORLD, NULL);
     }
 
-    if (rank == 1)
-    {
-      for (int i = 0; i < nrows; i++)
-      {
-        for (int j = 0; j < ncols; j++)
-        {
-
-        printf(" %f ", WTERRAIN(Wprec,i,j));
-        }
-           printf("\n");
-      }
-    }
-
-    return;
     modif = 0; // sera mis à 1 s'il y a une modification
 
     // calcule le nouveau W fonction de l'ancien (Wprec) en chaque point [i,j]
+
     for (int i = 1; i < nrows - 1; i++)
     {
       for (int j = 0; j < ncols; j++)
@@ -211,6 +198,7 @@ mnt *darboux(const mnt *restrict m)
     }
 
     MPI_Reduce(&modif, &end, 1, MPI_INT, MPI_LOR, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&end, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
 #ifdef DARBOUX_PPRINT
     dpprint();
@@ -223,6 +211,13 @@ mnt *darboux(const mnt *restrict m)
     Wprec = tmp;
   }
   // fin du while principal
+  // free
+   for (int i = m->ncols; i < m->ncols * (m->nrows+1); i++))
+  {
+       printf(" %f ", W[i]);
+       if (i % ncols == 0 ) printf("\n") ;
+  }
+  return ;
 
   // fin du calcul, le résultat se trouve dans W
   free(Wprec);

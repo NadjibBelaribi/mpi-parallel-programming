@@ -48,20 +48,28 @@ int main(int argc, char **argv)
 
   /******************************************/
 
- 
   // READ INPUT
   if (rank == 0)
   {
     m = mnt_read(argv[1]);
-    recvParam.ligne_per_proc = m->nrows;
-    recvParam.col_per_proc = m->ncols;
-    recvParam.max = m->max;
-    recvParam.no_data = m->no_data;
+    
+     recvParam.ligne_per_proc = m->nrows;
+     recvParam.col_per_proc = m->ncols;
+     recvParam.max = m->max;
+     recvParam.no_data = m->no_data;
 
-    matrix = m->terrain;
-  }
+     matrix = m->terrain;
 
-    part_m = (mnt *)malloc(sizeof(mnt));
+
+     d = malloc(sizeof(*d));
+     memcpy(d, m, sizeof(*d));
+     d->terrain = malloc(m->nrows*m->ncols*size* sizeof(float)) ;
+     d->ncols = m->nrows;
+     d->nrows = m->ncols;
+
+   }
+
+  part_m = (mnt *)malloc(sizeof(mnt));
 
   MPI_Bcast(&recvParam, 1, Mpi_bcastParam, 0, MPI_COMM_WORLD);
 
@@ -70,45 +78,39 @@ int main(int argc, char **argv)
   part_m->max = recvParam.max;
   part_m->no_data = recvParam.no_data;
 
-  // allouer 2 lignes additionneles pour l'echange 
+  // allouer 2 lignes additionneles pour l'echange
 
-  float taille = part_m->ncols * (part_m->nrows + 1) ; 
+  float taille = part_m->ncols * part_m->nrows;
   part_m->terrain = malloc(sizeof(float) * taille);
 
   MPI_Scatter(matrix, part_m->ncols * part_m->nrows, MPI_FLOAT,
-              &part_m->terrain[part_m->ncols], part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
+              part_m->terrain, part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
-   // COMPUTE
-  d = darboux(part_m);
+  // COMPUTE
+  part_m = darboux(part_m);
 
-  MPI_Gather(&d->terrain[part_m->ncols], part_m->ncols * part_m->nrows, MPI_FLOAT,
-            m->terrain, part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
-/*
-  if (rank == 0)
+  MPI_Gather(&part_m->terrain[part_m->ncols], part_m->ncols * part_m->nrows, MPI_FLOAT,
+             &d->terrain[0], part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
+
+  /*if (rank == 0)
   {
-    for (int i = 0; i < part_m->ncols * part_m->nrows * size; i++)
-      {
-        printf(" %f ", m->terrain[i]);
-        if(i%10 == 0) printf("\n") ;
-       }
-  }*/
 
+    // WRITE OUTPUT
+    FILE *out;
+    if (argc == 3)
+      out = fopen(argv[2], "w");
+    else
+      out = stdout;
+    mnt_write(d, out);
+    if (argc == 3)
+      fclose(out);
+    else
+      mnt_write_lakes(m, d, stdout);
 
-  // WRITE OUTPUT
-  FILE *out;
-  if(argc == 3)
-    out = fopen(argv[2], "w");
-  else
-    out = stdout;
-  mnt_write(d, out);
-  if(argc == 3)
-    fclose(out);
-  else
-    mnt_write_lakes(part_m, d, stdout);
+    // free
+    */
+   if(rank == 0){
 
-  // free
-  if (rank == 0)
-  {
     free(m->terrain);
     free(m);
     free(matrix);
