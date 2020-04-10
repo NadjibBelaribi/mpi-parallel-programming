@@ -1,4 +1,4 @@
- // fonctions d'entrée/sortie
+// fonctions d'entrée/sortie
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -7,7 +7,7 @@
 #include "type.h"
 #include "io.h"
 #include <string.h>
-#include<float.h>
+#include <float.h>
 #include <mpi.h>
 
  
@@ -20,8 +20,6 @@ mnt *mnt_read(char *fname)
   float max ;
   int rows ;
 
-   
-
   CHECK((m = malloc(sizeof(*m))) != NULL);
   CHECK((f = fopen(fname, "r")) != NULL);
 
@@ -32,6 +30,8 @@ mnt *mnt_read(char *fname)
   CHECK(fscanf(f, "%f", &m->cellsize) == 1);
   CHECK(fscanf(f, "%f", &m->no_data) == 1);
 
+   m->first_rows  = m->nrows ; 
+ 
   if(m->nrows % size != 0 )
     rows =  (m->nrows +size - (m->nrows % size))/size ; 
   else 
@@ -49,7 +49,7 @@ mnt *mnt_read(char *fname)
       max = m->terrain[i];
   }
    m->max = max ;
-   m->nrows = rows ;
+   m->nrows = rows * size ;
   
 
 CHECK(fclose(f) == 0);

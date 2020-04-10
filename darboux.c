@@ -1,4 +1,4 @@
- // fonction de calcul principale : algorithme de Darboux
+// fonction de calcul principale : algorithme de Darboux
 // (remplissage des cuvettes d'un MNT)
 #include <string.h>
 #include <mpi.h>
@@ -14,13 +14,8 @@
 #define PRECISION_FLOTTANT 1.e-5
 
 // pour accéder à un tableau de flotant linéarisé (ncols doit être défini) :
-<<<<<<< HEAD
 #define WTERRAIN(w, i, j) (w[(i)*ncols + (j)])
 extern int rank, size;
-=======
-#define WTERRAIN(w,i,j) (w[(i)*ncols+(j)])
-extern int  rank;
->>>>>>> 5bb234f9fd27a1d55e8571d867647214121a8f33
 
 // calcule la valeur max de hauteur sur un terrain
 float max_terrain(const mnt *restrict m)
@@ -38,25 +33,16 @@ float *init_W(const mnt *restrict m)
   const int ncols = m->ncols, nrows = m->nrows + 2;
   float *restrict W;
 
-<<<<<<< HEAD
-=======
- 
->>>>>>> 5bb234f9fd27a1d55e8571d867647214121a8f33
   CHECK((W = malloc(ncols * nrows * sizeof(float))) != NULL);
 
   // initialisation W
   const float max = m->max + 10.;
-<<<<<<< HEAD
 
   for (int i = 1; i < nrows - 1; i++)
-=======
-  
-  for(int i = 0 ; i < nrows ; i++)
->>>>>>> 5bb234f9fd27a1d55e8571d867647214121a8f33
   {
     for (int j = 0; j < ncols; j++)
     {
-      if ((i == 1 && rank == 0) || (i == nrows - 2 && rank == size - 1) || j == 0 || j == ncols - 1 || TERRAIN(m, i - 1, j) == m->no_data)
+      if ((i == 1 && rank == 0) || (i + rank * m->nrows) >= m->first_rows || j == 0 || j == ncols - 1 || TERRAIN(m, i - 1, j) == m->no_data)
         WTERRAIN(W, i, j) = TERRAIN(m, i - 1, j);
       else
         WTERRAIN(W, i, j) = max;
@@ -161,40 +147,39 @@ mnt *darboux(const mnt *restrict m)
   Wprec = init_W(m);
 
   // calcul : boucle principale
-  int end = 1, modif = 0;
+  int end = 1, modif;
   while (end)
   {
 
     if (rank == 0)
     {
       // send last to next
-      MPI_Send(&Wprec[(nrows - 2) * ncols], ncols, MPI_FLOAT, rank + 1, 91, MPI_COMM_WORLD);
+      MPI_Send(&Wprec[(nrows - 2) * ncols], ncols, MPI_FLOAT, rank + 1, 200, MPI_COMM_WORLD);
 
       // recv first of next
-      MPI_Recv(&Wprec[(nrows - 1) * ncols], ncols, MPI_FLOAT, rank + 1, 91, MPI_COMM_WORLD, NULL);
+      MPI_Recv(&Wprec[(nrows - 1) * ncols], ncols, MPI_FLOAT, rank + 1, 200, MPI_COMM_WORLD, NULL);
     }
     else if (rank == size - 1)
     {
-      // send first to precedent
-      MPI_Send(&Wprec[ncols], ncols, MPI_FLOAT, rank - 1, 91, MPI_COMM_WORLD);
-
       // recv last of precedent
-      MPI_Recv(&Wprec[0], ncols, MPI_FLOAT, rank - 1, 91, MPI_COMM_WORLD, NULL);
+      MPI_Recv(&Wprec[0], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD, NULL);
+
+      // send first to precedent
+      MPI_Send(&Wprec[ncols], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD);
     }
     else
     {
+      //recv last from precedent
+      MPI_Recv(&Wprec[0], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD, NULL);
 
       // send first to precedent
-      MPI_Send(&Wprec[ncols], ncols, MPI_FLOAT, rank - 1, 91, MPI_COMM_WORLD);
-
-      //recv last from precedent
-      MPI_Recv(&Wprec[0], ncols, MPI_FLOAT, rank - 1, 91, MPI_COMM_WORLD, NULL);
+      MPI_Send(&Wprec[ncols], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD);
 
       //send last to next
-      MPI_Send(&Wprec[(nrows - 2) * ncols], ncols, MPI_FLOAT, rank + 1, 91, MPI_COMM_WORLD);
+      MPI_Send(&Wprec[(nrows - 2) * ncols], ncols, MPI_FLOAT, rank + 1, 200, MPI_COMM_WORLD);
 
       // recv first from next
-      MPI_Recv(&Wprec[(nrows - 1) * ncols], ncols, MPI_FLOAT, rank + 1, 91, MPI_COMM_WORLD, NULL);
+      MPI_Recv(&Wprec[(nrows - 1) * ncols], ncols, MPI_FLOAT, rank + 1, 200, MPI_COMM_WORLD, NULL);
     }
 
     modif = 0; // sera mis à 1 s'il y a une modification
@@ -226,12 +211,6 @@ mnt *darboux(const mnt *restrict m)
   }
   // fin du while principal
   // free
-   for (int i = m->ncols; i < m->ncols * (m->nrows+1); i++))
-  {
-       printf(" %f ", W[i]);
-       if (i % ncols == 0 ) printf("\n") ;
-  }
-  return ;
 
   // fin du calcul, le résultat se trouve dans W
   free(Wprec);

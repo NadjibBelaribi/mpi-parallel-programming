@@ -1,7 +1,8 @@
- // programme principal
+// programme principal
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
+#include <string.h>
 #include "type.h"
 #include "io.h"
 #include "darboux.h"
@@ -18,7 +19,7 @@ int main(int argc, char **argv)
   }
 
   mnt *m, *d;
-  mnt *part_m = NULL;
+  mnt *part_m;
   MPI_Datatype Mpi_bcastParam;
   float *matrix = NULL;
   struct bcastParam recvParam;
@@ -52,23 +53,23 @@ int main(int argc, char **argv)
   if (rank == 0)
   {
     m = mnt_read(argv[1]);
-    
-     recvParam.ligne_per_proc = m->nrows;
-     recvParam.col_per_proc = m->ncols;
-     recvParam.max = m->max;
-     recvParam.no_data = m->no_data;
+    matrix = m->terrain;
 
-     matrix = m->terrain;
+    recvParam.ligne_per_proc = m->nrows/size;
+    recvParam.col_per_proc = m->ncols;
+    recvParam.max = m->max;
+    recvParam.no_data = m->no_data;
 
 
-     d = malloc(sizeof(*d));
-     memcpy(d, m, sizeof(*d));
-     d->terrain = malloc(m->nrows*m->ncols*size* sizeof(float)) ;
-     d->ncols = m->nrows;
-     d->nrows = m->ncols;
+    d = (mnt *)malloc(sizeof(*d));
+    memcpy(d, m, sizeof(*d));
+    d->ncols = m->ncols;
+    d->nrows = m->first_rows;
+    d->terrain = malloc(m->nrows * d->ncols * sizeof(float));
 
-   }
-
+    //printf(" mrows %d mcols %d mfist rows %d \n", m->nrows, m->ncols, m->first_rows) ; 
+  }
+  
   part_m = (mnt *)malloc(sizeof(mnt));
 
   MPI_Bcast(&recvParam, 1, Mpi_bcastParam, 0, MPI_COMM_WORLD);
@@ -78,6 +79,7 @@ int main(int argc, char **argv)
   part_m->max = recvParam.max;
   part_m->no_data = recvParam.no_data;
 
+ 
   // allouer 2 lignes additionneles pour l'echange
 
   float taille = part_m->ncols * part_m->nrows;
@@ -90,13 +92,13 @@ int main(int argc, char **argv)
   part_m = darboux(part_m);
 
   MPI_Gather(&part_m->terrain[part_m->ncols], part_m->ncols * part_m->nrows, MPI_FLOAT,
-             &d->terrain[0], part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
+             d->terrain, part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
-  /*if (rank == 0)
+  if (rank == 0)
   {
 
     // WRITE OUTPUT
-    FILE *out;
+   /* FILE *out;
     if (argc == 3)
       out = fopen(argv[2], "w");
     else
@@ -105,25 +107,22 @@ int main(int argc, char **argv)
     if (argc == 3)
       fclose(out);
     else
-      mnt_write_lakes(m, d, stdout);
+      mnt_write_lakes(m, d, stdout);*/
 
     // free
-    */
-   if(rank == 0){
 
     free(m->terrain);
     free(m);
-    free(matrix);
+    free(d->terrain);
+    free(d);
   }
-printf("\n");
 
 
   free(part_m->terrain);
   free(part_m);
-  free(d->terrain);
-  free(d);
 
   MPI_Finalize();
+  printf("\n");
 
   return (0);
 }
