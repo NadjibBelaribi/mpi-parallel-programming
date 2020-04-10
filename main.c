@@ -91,8 +91,17 @@ int main(int argc, char **argv)
   // COMPUTE
   part_m = darboux(part_m);
 
-  MPI_Gather(&part_m->terrain[part_m->ncols], part_m->ncols * part_m->nrows, MPI_FLOAT,
-             d->terrain, part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
+  if(rank == 1)
+  {
+    
+    for (int i =  part_m->ncols; i <  (part_m->nrows +1) *  part_m->ncols; i++)
+    {
+      printf("%f \n", part_m->terrain[i]) ; 
+    }
+  }
+
+  //MPI_Gather(&part_m->terrain[part_m->ncols], part_m->ncols * part_m->nrows, MPI_FLOAT,
+     //        d->terrain, part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
   if (rank == 0)
   {
@@ -122,7 +131,6 @@ int main(int argc, char **argv)
   free(part_m);
 
   MPI_Finalize();
-  printf("\n");
-
+ 
   return (0);
 }
