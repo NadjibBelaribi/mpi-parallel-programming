@@ -199,9 +199,9 @@ mnt *darboux(const mnt *restrict m)
     MPI_Reduce(&modif, &end, 1, MPI_INT, MPI_LOR, 0, MPI_COMM_WORLD);
     MPI_Bcast(&end, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-#ifdef DARBOUX_PPRINT
+/*#ifdef DARBOUX_PPRINT
     dpprint();
-#endif
+#endif*/
 
     // échange W et Wprec
     // sans faire de copie mémoire : échange les pointeurs sur les deux tableaux

@@ -81,7 +81,7 @@ void mnt_write_lakes(mnt *m, mnt *d, FILE *f)
 {
   CHECK(f != NULL);
 
-  for(int i = 0 ; i < m->nrows ; i++)
+  for(int i = 0 ; i < d->nrows ; i++)
   {
     for(int j = 0 ; j < m->ncols ; j++)
     {

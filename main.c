@@ -64,8 +64,8 @@ int main(int argc, char **argv)
     d = (mnt *)malloc(sizeof(*d));
     memcpy(d, m, sizeof(*d));
     d->ncols = m->ncols;
-        d->nrows = m->nrows;
-      d->terrain = malloc(d->nrows * d->ncols * sizeof(float));
+    d->nrows = m->nrows;
+    d->terrain =(float*) malloc(d->nrows * d->ncols * sizeof(float));
 
  
    }
@@ -100,6 +100,8 @@ int main(int argc, char **argv)
   if (rank == 0)
   {
 
+    d->nrows = m->first_rows ;
+ 
     // WRITE OUTPUT
     FILE *out;
     if (argc == 3)
