@@ -1,4 +1,4 @@
-// programme principal
+ // programme principal
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
@@ -64,11 +64,11 @@ int main(int argc, char **argv)
     d = (mnt *)malloc(sizeof(*d));
     memcpy(d, m, sizeof(*d));
     d->ncols = m->ncols;
-    d->nrows = m->first_rows;
-    d->terrain = malloc(m->nrows * d->ncols * sizeof(float));
+        d->nrows = m->nrows;
+      d->terrain = malloc(d->nrows * d->ncols * sizeof(float));
 
-    //printf(" mrows %d mcols %d mfist rows %d \n", m->nrows, m->ncols, m->first_rows) ; 
-  }
+ 
+   }
   
   part_m = (mnt *)malloc(sizeof(mnt));
 
@@ -91,23 +91,17 @@ int main(int argc, char **argv)
   // COMPUTE
   part_m = darboux(part_m);
 
-  if(rank == 1)
-  {
-    
-    for (int i =  part_m->ncols; i <  (part_m->nrows +1) *  part_m->ncols; i++)
-    {
-      printf("%f \n", part_m->terrain[i]) ; 
-    }
-  }
-
-  //MPI_Gather(&part_m->terrain[part_m->ncols], part_m->ncols * part_m->nrows, MPI_FLOAT,
-     //        d->terrain, part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
+  ///Changement///
+   MPI_Gather(&part_m->terrain[part_m->ncols], part_m->ncols * part_m->nrows, MPI_FLOAT,
+             d->terrain, part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
+  
+  
 
   if (rank == 0)
   {
 
     // WRITE OUTPUT
-   /* FILE *out;
+    FILE *out;
     if (argc == 3)
       out = fopen(argv[2], "w");
     else
@@ -116,7 +110,7 @@ int main(int argc, char **argv)
     if (argc == 3)
       fclose(out);
     else
-      mnt_write_lakes(m, d, stdout);*/
+      mnt_write_lakes(m, d, stdout);
 
     // free
 
