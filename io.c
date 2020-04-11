@@ -16,7 +16,6 @@ mnt *mnt_read(char *fname)
 {
   mnt *m;
   FILE *f;
-  float max;
   int rows;
 
   CHECK((m = malloc(sizeof(*m))) != NULL);
@@ -39,13 +38,10 @@ mnt *mnt_read(char *fname)
 
   CHECK((m->terrain = malloc(taille * sizeof(float))) != NULL);
 
-  max = FLT_MIN_10_EXP - 37;
-
+ 
   for (int i = 0; i < m->ncols * m->nrows; i++)
   {
     CHECK(fscanf(f, "%f", &m->terrain[i]) == 1);
-    if (m->terrain[i] > max)
-      max = m->terrain[i];
   }
 
   for (int i = m->ncols * m->nrows; i < m->ncols * rows * size; i++)
@@ -53,7 +49,6 @@ mnt *mnt_read(char *fname)
     m->terrain[i] = m->no_data;
   }
 
-  m->max = max;
   m->nrows = rows * size;
 
   CHECK(fclose(f) == 0);

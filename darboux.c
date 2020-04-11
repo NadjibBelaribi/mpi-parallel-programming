@@ -2,6 +2,7 @@
 // (remplissage des cuvettes d'un MNT)
 #include <string.h>
 #include <mpi.h>
+#include <omp.h>
 
 #include "check.h"
 #include "type.h"
@@ -18,7 +19,7 @@
 extern int rank, size;
 
 // calcule la valeur max de hauteur sur un terrain
-float max_terrain(const mnt *restrict m)
+float max_terrain(mnt *restrict m)
 {
   float max = m->terrain[0];
   for (int i = 0; i < m->ncols * m->nrows; i++)

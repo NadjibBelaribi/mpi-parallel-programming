@@ -18,7 +18,10 @@ int main(int argc, char **argv)
     exit(1);
   }
 
-  mnt *m, *d;
+  mnt *m =(mnt *)malloc(sizeof(*m));
+
+  mnt *d = (mnt *)malloc(sizeof(*d));
+
   mnt *part_m;
   MPI_Datatype Mpi_bcastParam;
   float *matrix = NULL;
@@ -57,23 +60,22 @@ int main(int argc, char **argv)
   {
     m = mnt_read(argv[1]);
     matrix = m->terrain;
-
+    m->max = max_terrain(m);
     recvParam.ligne_per_proc = m->nrows / size;
     recvParam.col_per_proc = m->ncols;
     recvParam.max = m->max;
     recvParam.no_data = m->no_data;
     recvParam.first_rows = m->first_rows;
 
-    d = (mnt *)malloc(sizeof(*d));
     memcpy(d, m, sizeof(*d));
     d->ncols = m->ncols;
     d->nrows = m->nrows;
     d->terrain = (float *)malloc(d->nrows * d->ncols * sizeof(float));
   }
 
-  part_m = (mnt *)malloc(sizeof(mnt));
-
   MPI_Bcast(&recvParam, 1, Mpi_bcastParam, 0, MPI_COMM_WORLD);
+
+  part_m = (mnt *)malloc(sizeof(mnt));
 
   part_m->nrows = recvParam.ligne_per_proc;
   part_m->ncols = recvParam.col_per_proc;
@@ -85,9 +87,7 @@ int main(int argc, char **argv)
   part_m->terrain = malloc(sizeof(float) * taille);
 
   // allouer 2 lignes additionneles pour l'echange
-  printf("%d %d %d %f %f %d \n",rank , m->ncols , m->nrows , m->max , m->no_data , m->first_rows) ;
-
-  MPI_Scatter(matrix, part_m->ncols * part_m->nrows, MPI_FLOAT,
+   MPI_Scatter(matrix, part_m->ncols * part_m->nrows, MPI_FLOAT,
               part_m->terrain, part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
   // COMPUTE
@@ -108,7 +108,7 @@ int main(int argc, char **argv)
       out = fopen(argv[2], "w");
     else
       out = stdout;
-    mnt_write(d, out);
+    //mnt_write(d, out);
     if (argc == 3)
       fclose(out);
     else
