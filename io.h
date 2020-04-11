@@ -1,14 +1,15 @@
- #ifndef __IO_H__
+#ifndef __IO_H__
 #define __IO_H__
 
 #include "type.h"
 
 struct bcastParam
 {
-  int ligne_per_proc;
-  int col_per_proc;
   float max;
   float no_data;
+  int ligne_per_proc;
+  int col_per_proc;
+  int first_rows ;
 };
 
 mnt *mnt_read(char *fname);
