@@ -1,8 +1,9 @@
 // programme principal
 #include <stdio.h>
 #include <stdlib.h>
+ #include <string.h>
+#include <omp.h>
 #include <mpi.h>
-#include <string.h>
 #include "type.h"
 #include "io.h"
 #include "darboux.h"
@@ -18,7 +19,7 @@ int main(int argc, char **argv)
     exit(1);
   }
 
-  mnt *m =(mnt *)malloc(sizeof(*m));
+  mnt *m  ;
 
   mnt *d = (mnt *)malloc(sizeof(*d));
 
@@ -26,7 +27,7 @@ int main(int argc, char **argv)
   MPI_Datatype Mpi_bcastParam;
   float *matrix = NULL;
   struct bcastParam recvParam;
-
+ 
   if (MPI_Init(&argc, &argv))
   {
     fprintf(stderr, "erreur MPI_Init!\n");
@@ -86,8 +87,8 @@ int main(int argc, char **argv)
   float taille = part_m->ncols * part_m->nrows;
   part_m->terrain = malloc(sizeof(float) * taille);
 
-  // allouer 2 lignes additionneles pour l'echange
-   MPI_Scatter(matrix, part_m->ncols * part_m->nrows, MPI_FLOAT,
+   
+  MPI_Scatter(matrix, part_m->ncols * part_m->nrows, MPI_FLOAT,
               part_m->terrain, part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
   // COMPUTE
@@ -97,10 +98,12 @@ int main(int argc, char **argv)
   MPI_Gather(&part_m->terrain[part_m->ncols], part_m->ncols * part_m->nrows, MPI_FLOAT,
              d->terrain, part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
+  // allouer 2 lignes additionneles pour l'echange
+
   if (rank == 0)
   {
-
-    // WRITE OUTPUT
+     
+    /* // WRITE OUTPUT
     FILE *out;
     if (argc == 3)
       out = fopen(argv[2], "w");
@@ -110,7 +113,7 @@ int main(int argc, char **argv)
     if (argc == 3)
       fclose(out);
     else
-      mnt_write_lakes(m, d, stdout);
+      mnt_write_lakes(m, d, stdout);*/
 
     // free
 
