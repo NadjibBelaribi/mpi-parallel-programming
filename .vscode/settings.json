@@ -1,7 +1,0 @@
-{
-    "files.associations": {
-        "mpi.h": "c",
-        "darboux.h": "c",
-        "type.h": "c"
-    }
-}
