@@ -1,4 +1,4 @@
-CC=mpicc
+CC?=gcc
 # CFLAGS=-Wall -O3 -march=native -g -fopenmp
 CFLAGS=-Wall -O1 -g -fopenmp
 LDFLAGS=$(CFLAGS)
@@ -12,7 +12,7 @@ clean:
 	rm $(OBJ) main
 
 test: main
-	./main input/small.mnt
+	./main input/mini.mnt
 
 # si un .h ou le makefile change tout recompiler :
 $(OBJ): $(wildcard *.h) Makefile

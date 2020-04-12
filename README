@@ -12,16 +12,7 @@ Voici quelques indications :
 5. Enfin, pour vérifier si le calcul est terminé sur tous les processus, vous ferez une réduction sur la variable modif
 6. Récupérez le résultat sur le processus 0 qui gère la sortie.
 
-Une fois que ce programme parallèle fonctionne (il fonctionne s'il calcule exactement les mêmes résultats que le 
-programme séquentiel - vérifiez que c'est le cas !), sauvegardez-le et effectuez des mesures de performance.
- Puis réfléchissez à son optimisation : les échanges des premières/dernières lignes peuvent être réalisés 
- simultanément à une partie du calcul. De même, la réduction peut être réalisée simultanément au calcul de
-  l'itération suivante, et l'arrêt de la boucle while ne s'effectuera qu'une itération plus tard.
-  
-   Vous pouvez également utiliser OpenMP pour exécuter des boucles parallèles sur chaque processeur 
-   multi-coeurs et un seul processus par machine. Mesurez les gains de performances que vous obtenez
-    grâce à ces optimisations. Comparez l'accélération dans le cas simple et dans le cas optimisé. 
-    Observez -vous de meilleures performances ?
+Une fois que ce programme parallèle fonctionne (il fonctionne s'il calcule exactement les mêmes résultats que le programme séquentiel - vérifiez que c'est le cas !), sauvegardez-le et effectuez des mesures de performance. Puis réfléchissez à son optimisation : les échanges des premières/dernières lignes peuvent être réalisés simultanément à une partie du calcul. De même, la réduction peut être réalisée simultanément au calcul de l'itération suivante, et l'arrêt de la boucle while ne s'effectuera qu'une itération plus tard. Vous pouvez également utiliser OpenMP pour exécuter des boucles parallèles sur chaque processeur multi-coeurs et un seul processus par machine. Mesurez les gains de performances que vous obtenez grâce à ces optimisations. Comparez l'accélération dans le cas simple et dans le cas optimisé. Observez -vous de meilleures performances ?
 
 Est-ce que l'efficacité est de 100% sur quelques machines d'un réseau distribué ?
 

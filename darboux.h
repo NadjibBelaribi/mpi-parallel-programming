@@ -5,7 +5,6 @@
 
 #define EPSILON .01
 
-float max_terrain(mnt *restrict m) ;
 mnt *darboux(const mnt *restrict m);
 
 #endif
