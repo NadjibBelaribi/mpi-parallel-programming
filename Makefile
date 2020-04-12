@@ -12,7 +12,9 @@ clean:
 	rm $(OBJ) main
 
 test: main
-	./main input/small.mnt
+	mpirun -n 4 ./main input/small.mnt
 
+memory:
+		valgrind --leak-check=full mpirun -n 2 ./main input/mini.mnt
 # si un .h ou le makefile change tout recompiler :
 $(OBJ): $(wildcard *.h) Makefile

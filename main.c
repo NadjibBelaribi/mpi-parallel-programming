@@ -1,8 +1,9 @@
 // programme principal
 #include <stdio.h>
 #include <stdlib.h>
- #include <string.h>
+#include <string.h>
 #include <omp.h>
+#include <time.h>
 #include <mpi.h>
 #include "type.h"
 #include "io.h"
@@ -19,7 +20,7 @@ int main(int argc, char **argv)
     exit(1);
   }
 
-  mnt *m = NULL ;
+  mnt *m = NULL;
 
   mnt *d = (mnt *)malloc(sizeof(*d));
 
@@ -27,7 +28,8 @@ int main(int argc, char **argv)
   MPI_Datatype Mpi_bcastParam;
   float *matrix = NULL;
   struct bcastParam recvParam;
- 
+  double time_kernel, speedup;
+
   if (MPI_Init(&argc, &argv))
   {
     fprintf(stderr, "erreur MPI_Init!\n");
@@ -87,7 +89,14 @@ int main(int argc, char **argv)
   float taille = part_m->ncols * part_m->nrows;
   part_m->terrain = malloc(sizeof(float) * taille);
 
-   
+ 
+
+  MPI_Scatter(matrix, part_m->ncols * part_m->nrows, MPI_FLOAT,
+              part_m->terrain, part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
+
+ if (rank == 0)
+    time_kernel = omp_get_wtime();
+  
   MPI_Scatter(matrix, part_m->ncols * part_m->nrows, MPI_FLOAT,
               part_m->terrain, part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
@@ -102,7 +111,9 @@ int main(int argc, char **argv)
 
   if (rank == 0)
   {
-     
+    time_kernel = omp_get_wtime() - time_kernel;
+    printf("Kernel time -- : %3.5lf s\n", time_kernel);
+
     /* // WRITE OUTPUT
     FILE *out;
     if (argc == 3)
