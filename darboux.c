@@ -152,6 +152,7 @@ mnt *darboux(const mnt *restrict m)
   while (end)
   {
     int i;
+    modif = 0;
     if (rank == 0)
     {
       // send last to next
@@ -208,7 +209,7 @@ mnt *darboux(const mnt *restrict m)
       //send last to next
       MPI_Send(&Wprec[(nrows - 2) * ncols], ncols, MPI_FLOAT, rank + 1, 200, MPI_COMM_WORLD);
 
-      for (int i = 1; i < nrows - 2; i++)
+      for (i = 1; i < nrows - 2; i++)
     {
       for (int j = 0; j < ncols; j++)
       {
@@ -219,21 +220,22 @@ mnt *darboux(const mnt *restrict m)
     }
       // recv first from next
       MPI_Recv(&Wprec[(nrows - 1) * ncols], ncols, MPI_FLOAT, rank + 1, 200, MPI_COMM_WORLD, NULL);
-    }
+    
 
-   /* for (int j = 0; j < ncols; j++)
+      for (int j = 0; j < ncols; j++)
       {
         // calcule la nouvelle valeur de W[i,j]
         // en utilisant les 8 voisins de la position [i,j] du tableau Wprec
         modif |= calcul_Wij(W, Wprec, m, i, j);
-      }*/
+      }
+  }
 
 
-    modif = 0; // sera mis à 1 s'il y a une modification
+     // sera mis à 1 s'il y a une modification
 
     // calcule le nouveau W fonction de l'ancien (Wprec) en chaque point [i,j]
 
-    for (int i = 1; i < nrows - 1; i++)
+   /* for (int i = 1; i < nrows - 1; i++)
     {
       for (int j = 0; j < ncols; j++)
       {
@@ -241,7 +243,7 @@ mnt *darboux(const mnt *restrict m)
         // en utilisant les 8 voisins de la position [i,j] du tableau Wprec
         modif |= calcul_Wij(W, Wprec, m, i, j);
       }
-    }
+    }*/
 
     MPI_Reduce(&modif, &end, 1, MPI_INT, MPI_LOR, 0, MPI_COMM_WORLD);
     MPI_Bcast(&end, 1, MPI_INT, 0, MPI_COMM_WORLD);
