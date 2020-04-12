@@ -19,7 +19,7 @@ int main(int argc, char **argv)
     exit(1);
   }
 
-  mnt *m  ;
+  mnt *m = NULL ;
 
   mnt *d = (mnt *)malloc(sizeof(*d));
 
