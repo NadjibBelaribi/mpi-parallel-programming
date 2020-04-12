@@ -69,8 +69,8 @@ int main(int argc, char **argv)
 
     memcpy(d, m, sizeof(*d));
     d->ncols = m->ncols;
-    d->nrows = m->nrows;
-    d->terrain = (float *)malloc(d->nrows * d->ncols * sizeof(float));
+    d->nrows = m->first_rows;
+    d->terrain = (float *)malloc(m->nrows * d->ncols * sizeof(float));
   }
 
   MPI_Bcast(&recvParam, 1, Mpi_bcastParam, 0, MPI_COMM_WORLD);
@@ -100,15 +100,13 @@ int main(int argc, char **argv)
   if (rank == 0)
   {
 
-    d->nrows = m->first_rows;
-
     // WRITE OUTPUT
     FILE *out;
     if (argc == 3)
       out = fopen(argv[2], "w");
     else
       out = stdout;
-    //mnt_write(d, out);
+    mnt_write(d, out);
     if (argc == 3)
       fclose(out);
     else

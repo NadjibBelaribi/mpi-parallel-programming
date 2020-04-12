@@ -148,59 +148,118 @@ mnt *darboux(const mnt *restrict m)
   Wprec = init_W(m);
 
   // calcul : boucle principale
-  int end = 1, modif;
+  int end = 1, modif = 0;
   while (end)
   {
 
     if (rank == 0)
     {
-      // send last to next
-      MPI_Send(&Wprec[(nrows - 2) * ncols], ncols, MPI_FLOAT, rank + 1, 200, MPI_COMM_WORLD);
+#pragma omp parallel sections
+      {
+#pragma omp section
+        {
+          // send last to next
+          MPI_Send(&Wprec[(nrows - 2) * ncols], ncols, MPI_FLOAT, rank + 1, 200, MPI_COMM_WORLD);
 
-      // recv first of next
-      MPI_Recv(&Wprec[(nrows - 1) * ncols], ncols, MPI_FLOAT, rank + 1, 200, MPI_COMM_WORLD, NULL);
+          // recv first of next
+          MPI_Recv(&Wprec[(nrows - 1) * ncols], ncols, MPI_FLOAT, rank + 1, 200, MPI_COMM_WORLD, NULL);
+
+          for (int j = 0; j < ncols; j++)
+          {
+            modif |= calcul_Wij(W, Wprec, m, nrows - 2, j);
+          }
+        }
+#pragma omp section
+        {
+          for (int i = 2; i < nrows - 2; i++)
+          {
+            for (int j = 0; j < ncols; j++)
+            {
+
+              modif |= calcul_Wij(W, Wprec, m, i, j);
+            }
+          }
+        }
+      }
     }
     else if (rank == size - 1)
     {
-      // recv last of precedent
-      MPI_Recv(&Wprec[0], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD, NULL);
+#pragma omp parallel sections
+      {
+#pragma omp section
+        {
+          // recv last of precedent
+          MPI_Recv(&Wprec[0], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD, NULL);
 
-      // send first to precedent
-      MPI_Send(&Wprec[ncols], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD);
+          // send first to precedent
+          MPI_Send(&Wprec[ncols], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD);
+
+          for (int j = 0; j < ncols; j++)
+          {
+            modif |= calcul_Wij(W, Wprec, m, 1, j);
+          }
+        }
+#pragma omp section
+        {
+          for (int i = 2; i < nrows - 2; i++)
+          {
+            for (int j = 0; j < ncols; j++)
+            {
+
+              modif |= calcul_Wij(W, Wprec, m, i, j);
+            }
+          }
+        }
+      }
     }
     else
     {
-      //recv last from precedent
-      MPI_Recv(&Wprec[0], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD, NULL);
-
-      // send first to precedent
-      MPI_Send(&Wprec[ncols], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD);
-
-      //send last to next
-      MPI_Send(&Wprec[(nrows - 2) * ncols], ncols, MPI_FLOAT, rank + 1, 200, MPI_COMM_WORLD);
-
-      // recv first from next
-      MPI_Recv(&Wprec[(nrows - 1) * ncols], ncols, MPI_FLOAT, rank + 1, 200, MPI_COMM_WORLD, NULL);
-    }
-
-    modif = 0; // sera mis à 1 s'il y a une modification
-
-    // calcule le nouveau W fonction de l'ancien (Wprec) en chaque point [i,j]
-
-    for (int i = 1; i < nrows - 1; i++)
-    {
-      for (int j = 0; j < ncols; j++)
+#pragma omp parallel sections
       {
-        // calcule la nouvelle valeur de W[i,j]
-        // en utilisant les 8 voisins de la position [i,j] du tableau Wprec
-        modif |= calcul_Wij(W, Wprec, m, i, j);
+#pragma omp section
+        {
+          //recv last from precedent
+          MPI_Recv(&Wprec[0], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD, NULL);
+
+          // send first to precedent
+          MPI_Send(&Wprec[ncols], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD);
+
+          //send last to next
+          MPI_Send(&Wprec[(nrows - 2) * ncols], ncols, MPI_FLOAT, rank + 1, 200, MPI_COMM_WORLD);
+
+          // recv first from next
+          MPI_Recv(&Wprec[(nrows - 1) * ncols], ncols, MPI_FLOAT, rank + 1, 200, MPI_COMM_WORLD, NULL);
+
+          for (int j = 0; j < ncols; j++)
+          {
+            modif |= calcul_Wij(W, Wprec, m, 1, j);
+          }
+          for (int j = 0; j < ncols; j++)
+          {
+            modif |= calcul_Wij(W, Wprec, m, nrows - 2, j);
+          }
+        }
+#pragma omp section
+        {
+          for (int i = 2; i < nrows - 2; i++)
+          {
+            for (int j = 0; j < ncols; j++)
+            {
+
+              modif |= calcul_Wij(W, Wprec, m, i, j);
+            }
+          }
+        }
       }
     }
 
     MPI_Reduce(&modif, &end, 1, MPI_INT, MPI_LOR, 0, MPI_COMM_WORLD);
     MPI_Bcast(&end, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-/*#ifdef DARBOUX_PPRINT
+    modif = 0 ;
+    // calcule le nouveau W fonction de l'ancien (Wprec) en chaque point [i,j]
+
+    /*#ifdef DARBOUX_PPRINT
     dpprint();
 #endif*/
 
