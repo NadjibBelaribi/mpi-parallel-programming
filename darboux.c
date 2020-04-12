@@ -151,14 +151,31 @@ mnt *darboux(const mnt *restrict m)
   int end = 1, modif;
   while (end)
   {
-
+    int i;
     if (rank == 0)
     {
       // send last to next
       MPI_Send(&Wprec[(nrows - 2) * ncols], ncols, MPI_FLOAT, rank + 1, 200, MPI_COMM_WORLD);
 
+      for (i = 1; i < nrows - 2; i++)
+    {
+      for (int j = 0; j < ncols; j++)
+      {
+        // calcule la nouvelle valeur de W[i,j]
+        // en utilisant les 8 voisins de la position [i,j] du tableau Wprec
+        modif |= calcul_Wij(W, Wprec, m, i, j);
+      }
+    }
+
       // recv first of next
       MPI_Recv(&Wprec[(nrows - 1) * ncols], ncols, MPI_FLOAT, rank + 1, 200, MPI_COMM_WORLD, NULL);
+
+      for (int j = 0; j < ncols; j++)
+      {
+        // calcule la nouvelle valeur de W[i,j]
+        // en utilisant les 8 voisins de la position [i,j] du tableau Wprec
+        modif |= calcul_Wij(W, Wprec, m, i, j);
+      }
     }
     else if (rank == size - 1)
     {
@@ -167,6 +184,18 @@ mnt *darboux(const mnt *restrict m)
 
       // send first to precedent
       MPI_Send(&Wprec[ncols], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD);
+
+      for (int i = 1; i < nrows - 1; i++)
+    {
+      for (int j = 0; j < ncols; j++)
+      {
+        // calcule la nouvelle valeur de W[i,j]
+        // en utilisant les 8 voisins de la position [i,j] du tableau Wprec
+        modif |= calcul_Wij(W, Wprec, m, i, j);
+      }
+    }
+
+
     }
     else
     {
@@ -179,9 +208,26 @@ mnt *darboux(const mnt *restrict m)
       //send last to next
       MPI_Send(&Wprec[(nrows - 2) * ncols], ncols, MPI_FLOAT, rank + 1, 200, MPI_COMM_WORLD);
 
+      for (int i = 1; i < nrows - 2; i++)
+    {
+      for (int j = 0; j < ncols; j++)
+      {
+        // calcule la nouvelle valeur de W[i,j]
+        // en utilisant les 8 voisins de la position [i,j] du tableau Wprec
+        modif |= calcul_Wij(W, Wprec, m, i, j);
+      }
+    }
       // recv first from next
       MPI_Recv(&Wprec[(nrows - 1) * ncols], ncols, MPI_FLOAT, rank + 1, 200, MPI_COMM_WORLD, NULL);
     }
+
+   /* for (int j = 0; j < ncols; j++)
+      {
+        // calcule la nouvelle valeur de W[i,j]
+        // en utilisant les 8 voisins de la position [i,j] du tableau Wprec
+        modif |= calcul_Wij(W, Wprec, m, i, j);
+      }*/
+
 
     modif = 0; // sera mis à 1 s'il y a une modification
 
