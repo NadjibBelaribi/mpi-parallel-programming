@@ -88,6 +88,10 @@ int main(int argc, char **argv)
   float taille = part_m->ncols * part_m->nrows;
   part_m->terrain = malloc(sizeof(float) * taille);
 
+   if (rank == 0)
+    time_kernel = omp_get_wtime();
+    
+
   // allouer 2 lignes additionneles pour l'echange
    MPI_Scatter(matrix, part_m->ncols * part_m->nrows, MPI_FLOAT,
               part_m->terrain, part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
@@ -102,6 +106,8 @@ int main(int argc, char **argv)
   if (rank == 0)
   {
 
+    time_kernel = omp_get_wtime() - time_kernel;
+    printf("Kernel time -- : %3.5lf s\n", time_kernel);
     d->nrows = m->first_rows;
 
     // WRITE OUTPUT
