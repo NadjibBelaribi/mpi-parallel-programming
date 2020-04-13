@@ -2,14 +2,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <mpi.h>
 #include <omp.h>
 #include <time.h>
-#include <mpi.h>
 #include "type.h"
 #include "io.h"
 #include "darboux.h"
 
-int rank, size;
+int rank = 0, size = 0;
 
 int main(int argc, char **argv)
 {
@@ -24,15 +24,16 @@ int main(int argc, char **argv)
 
   mnt *d = (mnt *)malloc(sizeof(*d));
 
-  mnt *part_m;
+  mnt *part_m = NULL;
   MPI_Datatype Mpi_bcastParam;
   float *matrix = NULL;
   struct bcastParam recvParam;
-  double time_kernel, speedup;
+  double time_kernel = 0.;
 
   if (MPI_Init(&argc, &argv))
   {
     fprintf(stderr, "erreur MPI_Init!\n");
+    free(d) ;
     return (1);
   }
 
@@ -89,14 +90,12 @@ int main(int argc, char **argv)
   float taille = part_m->ncols * part_m->nrows;
   part_m->terrain = malloc(sizeof(float) * taille);
 
- 
-
   MPI_Scatter(matrix, part_m->ncols * part_m->nrows, MPI_FLOAT,
               part_m->terrain, part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
- if (rank == 0)
+  if (rank == 0)
     time_kernel = omp_get_wtime();
-  
+
   MPI_Scatter(matrix, part_m->ncols * part_m->nrows, MPI_FLOAT,
               part_m->terrain, part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
@@ -112,9 +111,9 @@ int main(int argc, char **argv)
   if (rank == 0)
   {
     time_kernel = omp_get_wtime() - time_kernel;
-    printf("Kernel time -- : %3.5lf s\n", time_kernel);
-
-    /* // WRITE OUTPUT
+    printf("temps de calcul darboux -- : %3.5lf s\n", time_kernel);
+    /*
+    // WRITE OUTPUT
     FILE *out;
     if (argc == 3)
       out = fopen(argv[2], "w");
@@ -131,11 +130,11 @@ int main(int argc, char **argv)
     free(m->terrain);
     free(m);
     free(d->terrain);
-    free(d);
   }
-
+ 
   free(part_m->terrain);
   free(part_m);
+  free(d);
 
   MPI_Finalize();
 
