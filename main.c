@@ -64,8 +64,11 @@ int main(int argc, char **argv)
   {
     m = mnt_read(argv[1]);
     matrix = m->terrain;
+
+    time_kernel = omp_get_wtime();
     m->max = max_terrain(m);
-    
+    time_kernel = omp_get_wtime() - time_kernel;
+    printf("Kernel time openmp part-- : %3.5lf s\n", time_kernel);
     
     recvParam.ligne_per_proc = m->nrows / size;
     recvParam.col_per_proc = m->ncols;
