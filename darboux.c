@@ -213,12 +213,13 @@ mnt *darboux(const mnt *restrict m)
     else if (rank == size - 1)
     {
 
+      // recv last of preceden
+      MPI_Recv(&Wprec[0], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD, NULL);
+
        // send first to precedent
       MPI_Send(&Wprec[ncols], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD);
 
        
-      // recv last of preceden
-      MPI_Recv(&Wprec[0], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD, NULL);
       
        for (int i = 1; i < nrows - 1; i++)
     {
