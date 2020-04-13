@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
+#include <time.h>
 #include <string.h>
 #include "type.h"
 #include "io.h"
