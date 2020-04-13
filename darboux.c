@@ -25,7 +25,7 @@ float max_terrain(mnt *restrict m)
   //int num=8;
 
   //Je met 6 threads parce qu'on utilise 6 slot par machine
-  #pragma omp parallel for reduction(max : max_val),num_threads(6)
+  #pragma omp parallel for reduction(max : max_val),num_threads(12)
   for (int i = 0; i < m->ncols * m->nrows; i++){
     if (m->terrain[i] > max_val) max_val = m->terrain[i];
     //int tid=omp_get_thread_num();
