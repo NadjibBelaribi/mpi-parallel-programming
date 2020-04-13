@@ -102,7 +102,7 @@ int main(int argc, char **argv)
 
     d->nrows = m->first_rows;
 
-    // WRITE OUTPUT
+   /* // WRITE OUTPUT
     FILE *out;
     if (argc == 3)
       out = fopen(argv[2], "w");
@@ -114,7 +114,7 @@ int main(int argc, char **argv)
     else
       mnt_write_lakes(m, d, stdout);
 
-    // free
+    // free*/
 
     free(m->terrain);
     free(m);
