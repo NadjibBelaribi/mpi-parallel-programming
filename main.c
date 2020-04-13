@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <mpi.h>
 #include <string.h>
+#include <time.h>
+#include <omp.h>
 #include "type.h"
 #include "io.h"
 #include "darboux.h"
@@ -22,6 +24,7 @@ int main(int argc, char **argv)
 
   mnt *d = (mnt *)malloc(sizeof(*d));
 
+  double time_kernel;
   mnt *part_m;
   MPI_Datatype Mpi_bcastParam;
   float *matrix = NULL;
@@ -59,8 +62,13 @@ int main(int argc, char **argv)
   if (rank == 0)
   {
     m = mnt_read(argv[1]);
+    
     matrix = m->terrain;
+
+    time_kernel = omp_get_wtime();
     m->max = max_terrain(m);
+    time_kernel = omp_get_wtime() - time_kernel;
+    printf("Kernel time omp Time-- : %3.5lf s\n", time_kernel);
     recvParam.ligne_per_proc = m->nrows / size;
     recvParam.col_per_proc = m->ncols;
     recvParam.max = m->max;
@@ -86,6 +94,10 @@ int main(int argc, char **argv)
   float taille = part_m->ncols * part_m->nrows;
   part_m->terrain = malloc(sizeof(float) * taille);
 
+   if (rank == 0)
+    time_kernel = omp_get_wtime();
+    
+
   // allouer 2 lignes additionneles pour l'echange
    MPI_Scatter(matrix, part_m->ncols * part_m->nrows, MPI_FLOAT,
               part_m->terrain, part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
@@ -101,6 +113,9 @@ int main(int argc, char **argv)
   {
 
     d->nrows = m->first_rows;
+
+    time_kernel = omp_get_wtime() - time_kernel;
+    printf("Kernel time -- : %3.5lf s\n", time_kernel);
 
     // WRITE OUTPUT
     FILE *out;
