@@ -119,7 +119,7 @@ int main(int argc, char **argv)
 
     // WRITE OUTPUT
     FILE *out;
-    if (argc == 3)
+    /*if (argc == 3)
       out = fopen(argv[2], "w");
     else
       out = stdout;
