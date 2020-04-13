@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <mpi.h>
 #include <time.h>
+#include <omp.h>
 #include <string.h>
 #include "type.h"
 #include "io.h"
