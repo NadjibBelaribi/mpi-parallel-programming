@@ -21,11 +21,17 @@ extern int rank, size;
 // calcule la valeur max de hauteur sur un terrain
 float max_terrain(mnt *restrict m)
 {
-  float max = m->terrain[0];
-  for (int i = 0; i < m->ncols * m->nrows; i++)
-    if (m->terrain[i] > max)
-      max = m->terrain[i];
-  return (max);
+  float max_val = m->terrain[0];
+  //int num=8;
+
+  //Je met 6 threads parce qu'on utilise 6 slot par machine
+  #pragma omp parallel for reduction(max : max_val),num_threads(6)
+  for (int i = 0; i < m->ncols * m->nrows; i++){
+    if (m->terrain[i] > max_val) max_val = m->terrain[i];
+    int tid=omp_get_thread_num();
+    printf("%d\n",tid);
+  }
+  return (max_val);
 }
 
 // initialise le tableau W de départ à partir d'un mnt m

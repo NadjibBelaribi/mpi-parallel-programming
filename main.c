@@ -61,6 +61,8 @@ int main(int argc, char **argv)
     m = mnt_read(argv[1]);
     matrix = m->terrain;
     m->max = max_terrain(m);
+    
+    
     recvParam.ligne_per_proc = m->nrows / size;
     recvParam.col_per_proc = m->ncols;
     recvParam.max = m->max;
@@ -102,7 +104,7 @@ int main(int argc, char **argv)
 
     d->nrows = m->first_rows;
 
-   /* // WRITE OUTPUT
+    // WRITE OUTPUT
     FILE *out;
     if (argc == 3)
       out = fopen(argv[2], "w");
