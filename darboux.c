@@ -28,8 +28,8 @@ float max_terrain(mnt *restrict m)
   #pragma omp parallel for reduction(max : max_val),num_threads(6)
   for (int i = 0; i < m->ncols * m->nrows; i++){
     if (m->terrain[i] > max_val) max_val = m->terrain[i];
-    int tid=omp_get_thread_num();
-    printf("%d\n",tid);
+    //int tid=omp_get_thread_num();
+    //printf("%d\n",tid);
   }
   return (max_val);
 }
