@@ -23,7 +23,7 @@ int main(int argc, char **argv)
 
   mnt *d = (mnt *)malloc(sizeof(*d));
 
-  double time_reference ;
+  double time_kernel ;
 
   mnt *part_m;
   MPI_Datatype Mpi_bcastParam;
