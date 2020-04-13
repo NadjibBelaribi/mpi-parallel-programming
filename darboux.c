@@ -236,16 +236,8 @@ mnt *darboux(const mnt *restrict m)
     }
     else
     {
-      //recv last from precedent
-      MPI_Recv(&Wprec[0], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD, NULL);
 
-      // send first to precedent
-      MPI_Send(&Wprec[ncols], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD);
-
-      //send last to next
-      MPI_Send(&Wprec[(nrows - 2) * ncols], ncols, MPI_FLOAT, rank + 1, 200, MPI_COMM_WORLD);
-
-      for (i = 1; i < nrows - 2; i++)
+        for (i = 2; i < nrows - 2; i++)
     {
       for (int j = 0; j < ncols; j++)
       {
@@ -254,6 +246,14 @@ mnt *darboux(const mnt *restrict m)
         modif |= calcul_Wij(W, Wprec, m, i, j);
       }
     }
+      //recv last from precedent
+      MPI_Recv(&Wprec[0], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD, NULL);
+
+      // send first to precedent
+      MPI_Send(&Wprec[ncols], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD);
+
+      //send last to next
+      MPI_Send(&Wprec[(nrows - 2) * ncols], ncols, MPI_FLOAT, rank + 1, 200, MPI_COMM_WORLD);
    
       // recv first from next
       MPI_Recv(&Wprec[(nrows - 1) * ncols], ncols, MPI_FLOAT, rank + 1, 200, MPI_COMM_WORLD, NULL);
