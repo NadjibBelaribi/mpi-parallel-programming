@@ -215,8 +215,12 @@ mnt *darboux(const mnt *restrict m)
 
        // send first to precedent
       MPI_Send(&Wprec[ncols], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD);
+
+       
+      // recv last of preceden
+      MPI_Recv(&Wprec[0], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD, NULL);
       
-       for (int i = 2; i < nrows - 1; i++)
+       for (int i = 1; i < nrows - 1; i++)
     {
       for (int j = 0; j < ncols; j++)
       {
@@ -225,17 +229,6 @@ mnt *darboux(const mnt *restrict m)
         modif |= calcul_Wij(W, Wprec, m, i, j);
       }
     }
-      
-      // recv last of preceden
-      MPI_Recv(&Wprec[0], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD, NULL);
-
-     
-    for (int j = 0; j < ncols; j++)
-      {
-        // calcule la nouvelle valeur de W[i,j]
-        // en utilisant les 8 voisins de la position [i,j] du tableau Wprec
-        modif |= calcul_Wij(W, Wprec, m, 1, j);
-      }
      
 
 
