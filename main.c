@@ -102,7 +102,7 @@ int main(int argc, char **argv)
 
     d->nrows = m->first_rows;
 
-   /* // WRITE OUTPUT
+    // WRITE OUTPUT
     FILE *out;
     if (argc == 3)
       out = fopen(argv[2], "w");
