@@ -184,6 +184,7 @@ mnt *darboux(const mnt *restrict m)
     ///J'ai juste fait au plus simple pour le moment
 
      ////***************************************************************************///
+   if(end){
     if (rank == 0)
     {
       // send last to next
@@ -249,6 +250,7 @@ mnt *darboux(const mnt *restrict m)
         modif |= calcul_Wij(W, Wprec, m, i, j);
       }
     }
+   
       // recv first from next
       MPI_Recv(&Wprec[(nrows - 1) * ncols], ncols, MPI_FLOAT, rank + 1, 200, MPI_COMM_WORLD, NULL);
     
@@ -260,8 +262,10 @@ mnt *darboux(const mnt *restrict m)
         modif |= calcul_Wij(W, Wprec, m, i, j);
       }
   }
+   }
 
 
+  
     ///**************************Le truc qui avait avant**************************////
      // sera mis à 1 s'il y a une modification
 
