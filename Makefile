@@ -16,6 +16,6 @@ test: main
 	mpirun -n 4 ./main input/small.mnt
 
 memory:
-		mpiexec -np 2 valgrind  --track-origins=yes  ./main input/mini.mnt
+		mpiexec -np 2 valgrind --leak-check=full --track-origins=yes  ./main input/mini.mnt
 # si un .h ou le makefile change tout recompiler :
 $(OBJ): $(wildcard *.h) Makefile
