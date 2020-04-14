@@ -68,7 +68,7 @@ int main(int argc, char **argv)
     time_kernel = omp_get_wtime();
     m->max = max_terrain(m);
     time_kernel = omp_get_wtime() - time_kernel;
-    printf("Kernel time omp Time-- : %3.5lf s\n", time_kernel);
+    //printf("Kernel time omp Time-- : %3.5lf s\n", time_kernel);
     recvParam.ligne_per_proc = m->nrows / size;
     recvParam.col_per_proc = m->ncols;
     recvParam.max = m->max;
@@ -115,15 +115,15 @@ int main(int argc, char **argv)
     d->nrows = m->first_rows;
 
     time_kernel = omp_get_wtime() - time_kernel;
-    printf("Kernel time -- : %3.5lf s\n", time_kernel);
+    //printf("Kernel time -- : %3.5lf s\n", time_kernel);
 
     // WRITE OUTPUT
     FILE *out;
-    /*if (argc == 3)
+    if (argc == 3)
       out = fopen(argv[2], "w");
     else
       out = stdout;
-    //mnt_write(d, out);
+    mnt_write(d, out);
     if (argc == 3)
       fclose(out);
     else
