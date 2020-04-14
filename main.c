@@ -25,20 +25,20 @@ double time_reference ;
   time_reference = omp_get_wtime();
   d = darboux(m);
   time_reference = omp_get_wtime() - time_reference;
-  printf("Reference time : %3.5lf s\n", time_reference);
+  //printf("Reference time : %3.5lf s\n", time_reference);
 
 
   // WRITE OUTPUT
-  /*FILE *out;
+  FILE *out;
   if(argc == 3)
     out = fopen(argv[2], "w");
   else
     out = stdout;
-//  mnt_write(d, out);
+     mnt_write(d, out);
   if(argc == 3)
     fclose(out);
   else
-    mnt_write_lakes(m, d, stdout);*/
+    mnt_write_lakes(m, d, stdout);
 
   // free
   free(m->terrain);
