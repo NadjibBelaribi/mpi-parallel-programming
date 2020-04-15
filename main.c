@@ -1,15 +1,15 @@
-// programme principal
+ // programme principal
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <mpi.h>
-#include <omp.h>
+#include <string.h>
 #include <time.h>
+#include <omp.h>
 #include "type.h"
 #include "io.h"
 #include "darboux.h"
 
-int rank = 0, size = 0;
+int rank, size;
 
 int main(int argc, char **argv)
 {
@@ -24,16 +24,15 @@ int main(int argc, char **argv)
 
   mnt *d = (mnt *)malloc(sizeof(*d));
 
-  mnt *part_m = NULL;
+  double time_kernel = 0.;
+  mnt *part_m;
   MPI_Datatype Mpi_bcastParam;
   float *matrix = NULL;
   struct bcastParam recvParam;
-  double time_kernel = 0.;
 
   if (MPI_Init(&argc, &argv))
   {
     fprintf(stderr, "erreur MPI_Init!\n");
-    free(d) ;
     return (1);
   }
 
@@ -63,8 +62,13 @@ int main(int argc, char **argv)
   if (rank == 0)
   {
     m = mnt_read(argv[1]);
+    
     matrix = m->terrain;
+
+    time_kernel = omp_get_wtime();
     m->max = max_terrain(m);
+    time_kernel = omp_get_wtime() - time_kernel;
+    //printf("Kernel time omp Time-- : %3.5lf s\n", time_kernel);
     recvParam.ligne_per_proc = m->nrows / size;
     recvParam.col_per_proc = m->ncols;
     recvParam.max = m->max;
@@ -73,8 +77,8 @@ int main(int argc, char **argv)
 
     memcpy(d, m, sizeof(*d));
     d->ncols = m->ncols;
-    d->nrows = m->first_rows;
-    d->terrain = (float *)malloc(m->nrows * d->ncols * sizeof(float));
+    d->nrows = m->nrows;
+    d->terrain = (float *)malloc(d->nrows * d->ncols * sizeof(float));
   }
 
   MPI_Bcast(&recvParam, 1, Mpi_bcastParam, 0, MPI_COMM_WORLD);
@@ -90,13 +94,12 @@ int main(int argc, char **argv)
   float taille = part_m->ncols * part_m->nrows;
   part_m->terrain = malloc(sizeof(float) * taille);
 
-  MPI_Scatter(matrix, part_m->ncols * part_m->nrows, MPI_FLOAT,
-              part_m->terrain, part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
-
-  if (rank == 0)
+   if (rank == 0)
     time_kernel = omp_get_wtime();
+    
 
-  MPI_Scatter(matrix, part_m->ncols * part_m->nrows, MPI_FLOAT,
+  // allouer 2 lignes additionneles pour l'echange
+   MPI_Scatter(matrix, part_m->ncols * part_m->nrows, MPI_FLOAT,
               part_m->terrain, part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
   // COMPUTE
@@ -106,13 +109,14 @@ int main(int argc, char **argv)
   MPI_Gather(&part_m->terrain[part_m->ncols], part_m->ncols * part_m->nrows, MPI_FLOAT,
              d->terrain, part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
-  // allouer 2 lignes additionneles pour l'echange
-
   if (rank == 0)
   {
+
+    d->nrows = m->first_rows;
+
     time_kernel = omp_get_wtime() - time_kernel;
-    printf("temps de calcul darboux -- : %3.5lf s\n", time_kernel);
-    /*
+    printf("Kernel time -- : %3.5lf s\n", time_kernel);
+
     // WRITE OUTPUT
     FILE *out;
     if (argc == 3)
@@ -123,20 +127,21 @@ int main(int argc, char **argv)
     if (argc == 3)
       fclose(out);
     else
-      mnt_write_lakes(m, d, stdout);*/
+      mnt_write_lakes(m, d, stdout);
 
-    // free
+    // free*
 
     free(m->terrain);
     free(m);
     free(d->terrain);
+    free(d);
   }
- 
+
   free(part_m->terrain);
   free(part_m);
-  free(d);
 
   MPI_Finalize();
 
   return (0);
 }
+
