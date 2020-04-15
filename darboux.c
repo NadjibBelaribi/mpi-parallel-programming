@@ -38,10 +38,11 @@ float *init_W(const mnt *restrict m)
 
   // initialisation W
   const float max = m->max + 10.;
-
+  int j;
+  #pragma omp parallel for private(j)
   for (int i = 1; i < nrows - 1; i++)
   {
-    for (int j = 0; j < ncols; j++)
+    for ( j = 0; j < ncols; j++)
     {
       if ((i == 1 && rank == 0) || (i + rank * m->nrows) >= m->first_rows || j == 0 || j == ncols - 1 || TERRAIN(m, i - 1, j) == m->no_data)
         WTERRAIN(W, i, j) = TERRAIN(m, i - 1, j);
