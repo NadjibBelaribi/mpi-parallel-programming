@@ -115,10 +115,10 @@ int main(int argc, char **argv)
     d->nrows = m->first_rows;
 
     time_kernel = omp_get_wtime() - time_kernel;
-    //printf("Kernel time -- : %3.5lf s\n", time_kernel);
+    printf("Kernel time -- : %3.5lf s\n", time_kernel);
 
     // WRITE OUTPUT
-    FILE *out;
+    /*FILE *out;
     if (argc == 3)
       out = fopen(argv[2], "w");
     else
@@ -127,7 +127,7 @@ int main(int argc, char **argv)
     if (argc == 3)
       fclose(out);
     else
-      mnt_write_lakes(m, d, stdout);
+      mnt_write_lakes(m, d, stdout);*/
 
     // free*/
 
