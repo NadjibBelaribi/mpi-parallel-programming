@@ -18,8 +18,8 @@ int main(int argc, char **argv)
     exit(1);
   }
 
-  mnt *m =(mnt *)malloc(sizeof(*m));
-
+  
+  mnt *m=NULL;
   mnt *d = (mnt *)malloc(sizeof(*d));
 
   mnt *part_m;
@@ -58,6 +58,7 @@ int main(int argc, char **argv)
   // READ INPUT
   if (rank == 0)
   {
+    
     m = mnt_read(argv[1]);
     matrix = m->terrain;
     m->max = max_terrain(m);
