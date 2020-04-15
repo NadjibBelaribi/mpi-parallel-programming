@@ -237,14 +237,14 @@ mnt *darboux(const mnt *restrict m)
     else
     {
        
+
+       //send last to next
+      MPI_Send(&Wprec[(nrows - 2) * ncols], ncols, MPI_FLOAT, rank + 1, 200, MPI_COMM_WORLD);
       //recv last from precedent
       MPI_Recv(&Wprec[0], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD, NULL);
 
       // send first to precedent
       MPI_Send(&Wprec[ncols], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD);
-
-      //send last to next
-      MPI_Send(&Wprec[(nrows - 2) * ncols], ncols, MPI_FLOAT, rank + 1, 200, MPI_COMM_WORLD);
 
       for (i = 1; i < nrows - 2; i++)
     {
