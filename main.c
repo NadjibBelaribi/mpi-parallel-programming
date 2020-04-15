@@ -108,7 +108,7 @@ int main(int argc, char **argv)
       out = fopen(argv[2], "w");
     else
       out = stdout;
-    //mnt_write(d, out);
+    mnt_write(d, out);
     if (argc == 3)
       fclose(out);
     else

@@ -150,7 +150,7 @@ mnt *darboux(const mnt *restrict m)
   
   
   // calcul : boucle principale
-  
+
   int end = 1, modif;
   int started=0;
   while (end)
@@ -270,40 +270,11 @@ mnt *darboux(const mnt *restrict m)
   }
    }
 
-
-  
-    ///**************************Le truc qui avait avant**************************////
-     // sera mis à 1 s'il y a une modification
-
-    // calcule le nouveau W fonction de l'ancien (Wprec) en chaque point [i,j]
-
-   /* for (int i = 1; i < nrows - 1; i++)
-    {
-      for (int j = 0; j < ncols; j++)
-      {
-        // calcule la nouvelle valeur de W[i,j]
-        // en utilisant les 8 voisins de la position [i,j] du tableau Wprec
-        modif |= calcul_Wij(W, Wprec, m, i, j);
-      }
-    }*/
-
-    /*MPI_Reduce(&modif, &end, 1, MPI_INT, MPI_LOR, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&end, 1, MPI_INT, 0, MPI_COMM_WORLD);*/
-
-    ////***************************************************************************///
-
-/*#ifdef DARBOUX_PPRINT
-    dpprint();
-#endif*/
-
-    // échange W et Wprec
-    // sans faire de copie mémoire : échange les pointeurs sur les deux tableaux
     float *tmp = W;
     W = Wprec;
     Wprec = tmp;
   }
-  // fin du while principal
-  // free
+  
 
   // fin du calcul, le résultat se trouve dans W
   free(Wprec);
