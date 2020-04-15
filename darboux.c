@@ -147,47 +147,51 @@ mnt *darboux(const mnt *restrict m)
   CHECK((W = malloc(ncols * nrows * sizeof(float))) != NULL);
   Wprec = init_W(m);
 
+  
+  
   // calcul : boucle principale
+  
   int end = 1, modif;
+  int started=0;
   while (end)
   {
+    int i;
+    
 
+    //****************Optimization du ReadMe Proposition***************************//
+    ///De cette façon ça nous permet de faire le reduce dans la boucle d'après
+    //Mais j'aurai tendance a paralleliser tout ça en utilisant OpenMP
+    //Faudrait peut étre mettre le Bcast à la fin ???
+
+     ////***************************************************************************///
+     
+    if(started){
+      MPI_Reduce(&modif, &end, 1, MPI_INT, MPI_LOR, 0, MPI_COMM_WORLD);
+      MPI_Bcast(&end, 1, MPI_INT, 0, MPI_COMM_WORLD);
+      modif = 0;
+    }
+    else{
+      started=1;
+    }
+
+     //****************Optimization du ReadMe Proposition***************************//
+    //On commence le calcul juste après le le MPI_Send
+    //Le temps que ça arrive par le réseau on avance dans le calcul
+    //Quand dans le calcul on arrive à la ligne qui nécessite la ligne envoyé par
+    //un autre processus on fait le RecV
+
+    ///Je pense que ça peut étre améliorer dans le elif et le else en mettant des tag differents
+    ///Et en faisant tous les send avant les recv
+    ///J'ai juste fait au plus simple pour le moment
+
+     ////***************************************************************************///
+   if(end){
     if (rank == 0)
     {
       // send last to next
       MPI_Send(&Wprec[(nrows - 2) * ncols], ncols, MPI_FLOAT, rank + 1, 200, MPI_COMM_WORLD);
 
-      // recv first of next
-      MPI_Recv(&Wprec[(nrows - 1) * ncols], ncols, MPI_FLOAT, rank + 1, 200, MPI_COMM_WORLD, NULL);
-    }
-    else if (rank == size - 1)
-    {
-      // recv last of precedent
-      MPI_Recv(&Wprec[0], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD, NULL);
-
-      // send first to precedent
-      MPI_Send(&Wprec[ncols], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD);
-    }
-    else
-    {
-      //recv last from precedent
-      MPI_Recv(&Wprec[0], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD, NULL);
-
-      // send first to precedent
-      MPI_Send(&Wprec[ncols], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD);
-
-      //send last to next
-      MPI_Send(&Wprec[(nrows - 2) * ncols], ncols, MPI_FLOAT, rank + 1, 200, MPI_COMM_WORLD);
-
-      // recv first from next
-      MPI_Recv(&Wprec[(nrows - 1) * ncols], ncols, MPI_FLOAT, rank + 1, 200, MPI_COMM_WORLD, NULL);
-    }
-
-    modif = 0; // sera mis à 1 s'il y a une modification
-
-    // calcule le nouveau W fonction de l'ancien (Wprec) en chaque point [i,j]
-
-    for (int i = 1; i < nrows - 1; i++)
+      for (i = 1; i < nrows - 2; i++)
     {
       for (int j = 0; j < ncols; j++)
       {
@@ -197,8 +201,96 @@ mnt *darboux(const mnt *restrict m)
       }
     }
 
-    MPI_Reduce(&modif, &end, 1, MPI_INT, MPI_LOR, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&end, 1, MPI_INT, 0, MPI_COMM_WORLD);
+      // recv first of next
+      MPI_Recv(&Wprec[(nrows - 1) * ncols], ncols, MPI_FLOAT, rank + 1, 200, MPI_COMM_WORLD, NULL);
+
+      for (int j = 0; j < ncols; j++)
+      {
+        // calcule la nouvelle valeur de W[i,j]
+        // en utilisant les 8 voisins de la position [i,j] du tableau Wprec
+        modif |= calcul_Wij(W, Wprec, m, i, j);
+      }
+    }
+    else if (rank == size - 1)
+    {
+
+      // recv last of preceden
+      MPI_Recv(&Wprec[0], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD, NULL);
+
+       // send first to precedent
+      MPI_Send(&Wprec[ncols], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD);
+
+       
+      
+       for (int i = 1; i < nrows - 1; i++)
+    {
+      for (int j = 0; j < ncols; j++)
+      {
+        // calcule la nouvelle valeur de W[i,j]
+        // en utilisant les 8 voisins de la position [i,j] du tableau Wprec
+        modif |= calcul_Wij(W, Wprec, m, i, j);
+      }
+    }
+     
+
+
+    }
+    else
+    {
+       
+
+       //send last to next
+      MPI_Send(&Wprec[(nrows - 2) * ncols], ncols, MPI_FLOAT, rank + 1, 200, MPI_COMM_WORLD);
+      //recv last from precedent
+      MPI_Recv(&Wprec[0], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD, NULL);
+
+      // send first to precedent
+      MPI_Send(&Wprec[ncols], ncols, MPI_FLOAT, rank - 1, 200, MPI_COMM_WORLD);
+
+      for (i = 1; i < nrows - 2; i++)
+    {
+      for (int j = 0; j < ncols; j++)
+      {
+        // calcule la nouvelle valeur de W[i,j]
+        // en utilisant les 8 voisins de la position [i,j] du tableau Wprec
+        modif |= calcul_Wij(W, Wprec, m, i, j);
+      }
+    }
+      // recv first from next
+      MPI_Recv(&Wprec[(nrows - 1) * ncols], ncols, MPI_FLOAT, rank + 1, 200, MPI_COMM_WORLD, NULL);
+    
+
+      for (int j = 0; j < ncols; j++)
+      {
+        // calcule la nouvelle valeur de W[i,j]
+        // en utilisant les 8 voisins de la position [i,j] du tableau Wprec
+        modif |= calcul_Wij(W, Wprec, m, i, j);
+      }
+
+  }
+   }
+
+
+  
+    ///**************************Le truc qui avait avant**************************////
+     // sera mis à 1 s'il y a une modification
+
+    // calcule le nouveau W fonction de l'ancien (Wprec) en chaque point [i,j]
+
+   /* for (int i = 1; i < nrows - 1; i++)
+    {
+      for (int j = 0; j < ncols; j++)
+      {
+        // calcule la nouvelle valeur de W[i,j]
+        // en utilisant les 8 voisins de la position [i,j] du tableau Wprec
+        modif |= calcul_Wij(W, Wprec, m, i, j);
+      }
+    }*/
+
+    /*MPI_Reduce(&modif, &end, 1, MPI_INT, MPI_LOR, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&end, 1, MPI_INT, 0, MPI_COMM_WORLD);*/
+
+    ////***************************************************************************///
 
 /*#ifdef DARBOUX_PPRINT
     dpprint();
