@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
-#include <opm.h>
+#include <omp.h>
 #include <string.h>
 #include "type.h"
 #include "io.h"
