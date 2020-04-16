@@ -39,7 +39,7 @@ float *init_W(const mnt *restrict m)
   // initialisation W
   const float max = m->max + 10.;
   int j;
-  #pragma omp parallel for private(j)
+  //#pragma omp parallel for private(j)
   for (int i = 1; i < nrows - 1; i++)
   {
     for ( j = 0; j < ncols; j++)
