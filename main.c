@@ -29,7 +29,7 @@ double time_reference ;
 
 
   // WRITE OUTPUT
- /* FILE *out;
+  FILE *out;
   if(argc == 3)
     out = fopen(argv[2], "w");
   else
