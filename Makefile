@@ -9,7 +9,7 @@ all: main
 main: $(OBJ)
 
 clean:
-	rm $(OBJ) main
+	rm -f $(OBJ) main
 
 test: main
 	./main input/small.mnt

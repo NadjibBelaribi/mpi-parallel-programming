@@ -3,6 +3,7 @@
 
 #include "type.h"
 
+// structure pour un message broadcast
 struct bcastParam
 {
   float max;

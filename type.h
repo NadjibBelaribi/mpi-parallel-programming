@@ -7,8 +7,8 @@ typedef struct mnt_t
   int ncols, nrows;                   // size
   float xllcorner, yllcorner, cellsize; // not used
   float no_data;                      // mnt value unknown
-  float max ;
-  int first_rows ;
+  float max ;                         // maximum value in file
+  int first_rows ;                    // primary number of lines 
   float *terrain;                     // linear array (size: ncols*nrows)
 }
 mnt;

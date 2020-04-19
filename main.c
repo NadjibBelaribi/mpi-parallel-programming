@@ -19,14 +19,13 @@ int main(int argc, char **argv)
     exit(1);
   }
 
-  
-  mnt *m=NULL;
+  mnt *m = NULL;
   mnt *d = (mnt *)malloc(sizeof(*d));
-  double time_kernel=0;
   mnt *part_m;
   MPI_Datatype Mpi_bcastParam;
   float *matrix = NULL;
   struct bcastParam recvParam;
+  double time_kernel = 0;
 
   if (MPI_Init(&argc, &argv))
   {
@@ -34,12 +33,10 @@ int main(int argc, char **argv)
     return (1);
   }
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank); // rank du processus
+  MPI_Comm_size(MPI_COMM_WORLD, &size); // nombre de processus
 
-  /* Creation type pour le broadcast */
-
-  /* Creation type pour le broadcast */
+  /* Creation type MPI pour le broadcast */
 
   MPI_Datatype type[5] = {MPI_FLOAT, MPI_FLOAT, MPI_INT, MPI_INT, MPI_INT};
   int blocklen[5] = {1, 1, 1, 1, 1};
@@ -54,14 +51,15 @@ int main(int argc, char **argv)
   MPI_Type_create_struct(5, blocklen, disp, type, &Mpi_bcastParam);
   MPI_Type_commit(&Mpi_bcastParam);
 
-  /******************************************/
+  //-----------------------------------------------------------------------//
 
-  // READ INPUT
+  // READ INPUT on process 0
   if (rank == 0)
   {
-    
+
     m = mnt_read(argv[1]);
     matrix = m->terrain;
+
     m->max = max_terrain(m);
     recvParam.ligne_per_proc = m->nrows / size;
     recvParam.col_per_proc = m->ncols;
@@ -75,10 +73,13 @@ int main(int argc, char **argv)
     d->terrain = (float *)malloc(d->nrows * d->ncols * sizeof(float));
   }
 
+  // envoyer les données pour chaque processus
   MPI_Bcast(&recvParam, 1, Mpi_bcastParam, 0, MPI_COMM_WORLD);
 
+  // structre mnt pour chaque processus
   part_m = (mnt *)malloc(sizeof(mnt));
 
+  // reception des données
   part_m->nrows = recvParam.ligne_per_proc;
   part_m->ncols = recvParam.col_per_proc;
   part_m->max = recvParam.max;
@@ -88,18 +89,17 @@ int main(int argc, char **argv)
   float taille = part_m->ncols * part_m->nrows;
   part_m->terrain = malloc(sizeof(float) * taille);
 
-   if (rank == 0)
+  if (rank == 0)
     time_kernel = omp_get_wtime();
-   
 
-  // allouer 2 lignes additionneles pour l'echange
-   MPI_Scatter(matrix, part_m->ncols * part_m->nrows, MPI_FLOAT,
+  // Partager le terrain entre les processus 
+  MPI_Scatter(matrix, part_m->ncols * part_m->nrows, MPI_FLOAT,
               part_m->terrain, part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
   // COMPUTE
   part_m = darboux(part_m);
 
-  ///Changement///
+  /// Regroupement des résultats par le processus 0 
   MPI_Gather(&part_m->terrain[part_m->ncols], part_m->ncols * part_m->nrows, MPI_FLOAT,
              d->terrain, part_m->ncols * part_m->nrows, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
@@ -111,7 +111,7 @@ int main(int argc, char **argv)
     printf("Kernel time -- : %3.5lf s\n", time_kernel);
 
     // WRITE OUTPUT
-    /*FILE *out;
+    FILE *out;
     if (argc == 3)
       out = fopen(argv[2], "w");
     else
@@ -122,7 +122,7 @@ int main(int argc, char **argv)
     else
       mnt_write_lakes(m, d, stdout);
 
-    // free*/
+    // free
 
     free(m->terrain);
     free(m);

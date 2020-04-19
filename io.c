@@ -10,7 +10,7 @@
 #include <float.h>
 #include <mpi.h>
 
-extern int size;
+extern int size; // nombre de processus 
 
 mnt *mnt_read(char *fname)
 {
